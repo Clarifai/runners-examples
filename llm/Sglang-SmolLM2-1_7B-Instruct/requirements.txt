@@ -10,7 +10,7 @@ ninja
 qwen-vl-utils==0.0.8
 timm
 openai
-clarifai==11.1.7rc5
+clarifai==11.1.7rc7
 clarifai-protocol>=0.0.20
 psutil
 --extra-index-url https://flashinfer.ai/whl/cu124/torch2.4/
