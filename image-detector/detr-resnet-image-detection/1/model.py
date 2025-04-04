@@ -77,10 +77,11 @@ def process_detections(
         detections = []
         for score, label_idx, box in zip(result["scores"], result["labels"], result["boxes"]):
             if score > threshold:
+                label = model_labels[label_idx.item()]
                 detections.append(
                     Region(
                         box=box.tolist(),
-                        concepts=[Concept(name=model_labels[label_idx.item()], value=score.item())]
+                        concepts=[Concept(id=label, name=label, value=score.item())]
                     )
                 )
         outputs.append(detections)
