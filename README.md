@@ -530,8 +530,8 @@ single_result = model.predict(Text("Positive review"))
 
 # Batch prediction
 batch_results = model.predict([
-  Text("Great product"),
-  Text("Terrible service"),
-  Text("Average experience")
+    {"text": Text("Positive review")},
+    {"text": Text("Positive review")},
+    {"text": Text("Positive review")},
   ])
 ```
