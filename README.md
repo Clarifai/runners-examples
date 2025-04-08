@@ -255,16 +255,19 @@ def load_model(self):
 #### Method Decorators
 
 * **@ModelClass.method** registers prediction endpoints
-* Supports three method types via type hints:
+* Supports method types via type hints:
 
 ```python
 # Unary-Unary (Standard request-response)
+@ModelClass.method
 def predict(self, input: Image) -> Text
 
 # Unary-Stream (Server-side streaming)
+@ModelClass.method
 def generate(self, prompt: Text) -> Stream[Text]
 
 # Stream-Stream (Bidirectional streaming)
+@ModelClass.method
 def analyze_video(self, frames: Stream[Image]) -> Stream[str]
 ```
 
