@@ -1,3 +1,4 @@
+import base64
 import itertools
 from typing import Iterator
 
@@ -27,12 +28,33 @@ def stream_completion(model, client, input_data, inference_params):
   """Stream iteratively generates completions for the input data."""
 
   temperature = inference_params.get("temperature", 0.7)
-  max_tokens = inference_params.get("max_tokens", 512)
+  max_tokens = int(inference_params.get("max_tokens", 512))
   top_p = inference_params.get("top_p", 1.0)
-  system_prompt = "You'r a helpful assistant"
+  system_prompt = "You're a helpful assistant"
   system_prompt = inference_params.get("system_prompt", system_prompt)
 
-  prompt = input_data.text.raw
+  prompts = []
+  images = []
+
+  if input_data.parts:
+    prompts = [part.data.text.raw for part in input_data.parts
+               if part.data.text.raw] or [DEFAULT_PROMPT]
+    images = [part.data.image.base64 for part in input_data.parts if part.data.image.base64]
+
+    if not prompts:
+      prompts.append(DEFAULT_PROMPT)
+  else:
+    prompts.append(input_data.text.raw or DEFAULT_PROMPT)
+    images.append(input_data.image.base64)
+
+  content = []
+  for prompt, image_bytes in itertools.zip_longest(prompts, images):
+    if prompt:
+      content.append({"type": "text", "text": prompt})
+    if image_bytes:
+      image = "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("utf-8")
+      content.append({"type": "image_url", "image_url": {"url": image}})
+
   messages = [{"role": "user", "content": prompt}]
   kwargs = dict(
       model=model,
@@ -54,6 +76,8 @@ class Grok(ModelClass):
     """Load the model here."""
     self.client = OpenAI(api_key=API_KEY,base_url="https://api.x.ai/v1")
     self.model = "grok-3-latest"
+    # log that system is ready
+    print("Grok model loaded successfully!")
 
   def predict(self,
               request: service_pb2.PostModelOutputsRequest) -> service_pb2.MultiOutputResponse:

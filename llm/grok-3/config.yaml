@@ -1,15 +1,17 @@
 # This is the sample config file for the openai GPT model.
 
 model:
-  id: "model_id"
-  user_id: "user_id"
-  app_id: "app_id"
-  model_type_id: "text-to-text"
+  id: "grok-3"
+  user_id: "grok"
+  app_id: "chat-completion"
+  model_type_id: "multimodal-to-text"
 
 build_info:
   python_version: "3.11"
 
 inference_compute_info:
   cpu_limit: "1"
-  cpu_memory: "500m"
+  cpu_memory: 500m
   num_accelerators: 0
+  accelerator_type: null
+  accelerator_memory: null
