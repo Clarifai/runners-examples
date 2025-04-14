@@ -4,7 +4,7 @@ model:
   id: "grok-3"
   user_id: "grok"
   app_id: "chat-completion"
-  model_type_id: "multimodal-to-text"
+  model_type_id: "text-to-text"
 
 build_info:
   python_version: "3.11"
