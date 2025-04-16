@@ -39,16 +39,50 @@ model = Model(model_url="https://clarifai.com/model_user_id/model_app_id/models/
 > `chat_history` here must be same as Openai client `messages` object
 ```python
 # Single input prediction
-result = model.predict("Write 2000 word story?")
-print(f"unary-unary response: {result}")
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_current_weather",
+        "description": "Get the current weather in a given location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type":
+                    "string",
+                    "description":
+                    "The city to find the weather for, e.g. 'San Francisco'"
+                },
+                "state": {
+                    "type":
+                    "string",
+                    "description":
+                    "the two-letter abbreviation for the state that the city is"
+                    " in, e.g. 'CA' which would mean 'California'"
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to fetch the temperature in",
+                    "enum": ["celsius", "fahrenheit"]
+                }
+            },
+            "required": ["city", "state", "unit"]
+        }
+    }
+}]
 
-# Batch processing (automatically handled)
-batch_results = model.predict([
-    {"prompt": "Write 2000 word story?"},
-    {"prompt": "What is API?"},
-])
-for i, pred in enumerate(batch_results):
-    print(f"unary-unary response {i}: {pred}")
+prediction = model.predict(prompt="Can you tell me what the temperate will be in Dallas, in fahrenheit?", tools=tools)
+import json
+prediction = json.loads(prediction)
+if prediction and type(prediction) is list and len(prediction) > 0 and prediction[0].get('function'):
+    tool_calls_obj = prediction[0]['function']
+    function_name  = tool_calls_obj[0]['function']['name']
+    function_args = tool_calls_obj[0]['function']['arguments']
+    print(f'function_name: {function_name}')
+    print(f'function_args: {function_args}')
+else:
+    print('No function call found in the prediction response.')
+    print(prediction)
 ```
 
 #### Unary-Stream Prediction
@@ -66,31 +100,85 @@ for text_chunk in response_stream:
 #### Using `chat` Method
 > `messages` here must be same as Openai client `messages` object
 ```python
-messages=[{
-          "role": "user",
-          "content": [
-              {
-                  "type": "text",
-                  "text": "What are in these images? Is there any difference between them?",
-              },
-              {
-                  "type": "image_url",
-                  "image_url": {
-                      "url": "https://samples.clarifai.com/metro-north.jpg",
-                  },
-              },
-              {
-                  "type": "image_url",
-                  "image_url": {
-                      "url": "https://samples.clarifai.com/metro-north.jpg",
-                  },
-              },
-          ],
-      },
-      ]
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_current_weather",
+        "description": "Get the current weather in a given location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type":
+                    "string",
+                    "description":
+                    "The city to find the weather for, e.g. 'San Francisco'"
+                },
+                "state": {
+                    "type":
+                    "string",
+                    "description":
+                    "the two-letter abbreviation for the state that the city is"
+                    " in, e.g. 'CA' which would mean 'California'"
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to fetch the temperature in",
+                    "enum": ["celsius", "fahrenheit"]
+                }
+            },
+            "required": ["city", "state", "unit"]
+        }
+    }
+}]
 
-response_stream = model.chat(messages= messages, max_tokens = 256)
+messages = [{
+    "role": "user",
+    "content": "Hi! How are you doing today?"
+}, {
+    "role": "assistant",
+    "content": "I'm doing well! How can I help you?"
+}, {
+    "role": "user",
+    "content": "Can you tell me what the temperate will be in Dallas, in fahrenheit?"
+}]
 
-for chunk in response_stream:
-    print(chunk['choices'][0]['delta']['content'], end="", flush=True)
+stream_response = model.chat(messages=messages, tools = tools, max_tokens=150, temperature=1, top_p=0.8)
+
+
+chunks = []
+for chunk in stream_response:
+    chunks.append(chunk)
+    if chunk['choices'][0]['delta'] and chunk['choices'][0]['delta'].get('tool_calls'):
+        print(chunk['choices'][0]['delta']['tool_calls'][0])
+    else:
+        print(chunk['choices'][0]['delta'])
+
+arguments = []
+tool_call_idx = -1
+for chunk in chunks:
+
+    if chunk['choices'][0]['delta'].get('tool_calls'):
+        tool_call = chunk['choices'][0]['delta']['tool_calls'][0]
+
+        if tool_call['index'] != tool_call_idx:
+            if tool_call_idx >= 0:
+                print(
+                    f"streamed tool call arguments: {arguments[tool_call_idx]}"
+                )
+            tool_call_idx = chunk['choices'][0]['delta']['tool_calls'][0]['index']
+            arguments.append("")
+        if tool_call.get('id'):
+            print(f"streamed tool call id: {tool_call['id']} ")
+
+        if tool_call.get('function'):
+            if tool_call['function'].get('name'):
+                print(f"streamed tool call name: {tool_call['function']['name']}")
+
+            if tool_call['function'].get('arguments'):
+                arguments[tool_call_idx] += tool_call['function']['arguments']
+
+if len(arguments):
+    print(f"streamed tool call arguments: {arguments[-1]}")
+
 ```
