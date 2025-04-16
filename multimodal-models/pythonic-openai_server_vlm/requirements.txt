@@ -9,8 +9,8 @@ ninja
 qwen-vl-utils==0.0.8
 timm
 openai
-clarifai==11.1.7rc9
-clarifai-protocol>=0.0.20
+clarifai==11.2.3rc8
+clarifai-protocol>=0.0.22
 psutil
 
 torch==2.6.0

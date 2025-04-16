@@ -2,11 +2,11 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(__file__))
-from typing import List
+from typing import List, Iterator
 
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.model_class import ModelClass
-from clarifai.runners.utils.data_types import Image, Stream
+from clarifai.runners.utils.data_types import Image
 from openai import OpenAI
 from openai_client_wrapper import OpenAIWrapper
 from openai_server_starter import OpenAI_APIServer
@@ -78,14 +78,20 @@ class MyRunner(ModelClass):
     """This is the method that will be called when the runner is run. It takes in an input and
     returns an output.
     """
-    return self.client.chat(
+    response =  self.client.chat(
         prompt=prompt,
         image=image,
         images=images,
         messages=chat_history,
         max_tokens=max_tokens,
         temperature=temperature,
-        top_p=top_p).choices[0].message.content
+        top_p=top_p)
+    if response.usage and response.usage.prompt_tokens and response.usage.completion_tokens:
+      # Set the output context with the number of tokens used
+      # for both prompt and completion.
+      self.set_output_context(prompt_tokens= response.usage.prompt_tokens,
+                              completion_tokens= response.usage.completion_tokens)
+    return response.choices[0].message.content
 
   @ModelClass.method
   def generate(self,
@@ -95,7 +101,7 @@ class MyRunner(ModelClass):
                chat_history: List[dict] = None,
                max_tokens: int = 512,
                temperature: float = 0.7,
-               top_p: float = 0.8) -> Stream[str]:
+               top_p: float = 0.8) -> Iterator[str]:
     """Example yielding a whole batch of streamed stuff back."""
     for chunk in self.client.chat(
         prompt=prompt,
@@ -109,6 +115,9 @@ class MyRunner(ModelClass):
       if chunk.choices:
         text = (chunk.choices[0].delta.content
                 if (chunk and chunk.choices[0].delta.content) is not None else '')
+        if chunk.usage and chunk.usage.prompt_tokens and chunk.usage.completion_tokens:
+          self.set_output_context(prompt_tokens= chunk.usage.prompt_tokens,
+                                  completion_tokens= chunk.usage.completion_tokens)
         yield text
 
   @ModelClass.method
@@ -116,7 +125,7 @@ class MyRunner(ModelClass):
            messages: List[dict],
            max_tokens: int = 512,
            temperature: float = 0.7,
-           top_p: float = 0.8) -> Stream[dict]:
+           top_p: float = 0.8) -> Iterator[dict]:
     """Chat with the model."""
     for chunk in self.client.chat(
         messages=messages,
@@ -124,4 +133,7 @@ class MyRunner(ModelClass):
         temperature=temperature,
         top_p=top_p,
         stream=True):
+      if chunk.usage and chunk.usage.prompt_tokens and chunk.usage.completion_tokens:
+        self.set_output_context(prompt_tokens= chunk.usage.prompt_tokens,
+                                completion_tokens= chunk.usage.completion_tokens)
       yield chunk.to_dict()
