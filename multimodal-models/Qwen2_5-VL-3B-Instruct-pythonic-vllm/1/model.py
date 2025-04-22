@@ -156,7 +156,4 @@ class MyRunner(ModelClass):
            temperature: float = 0.7,
            top_p: float = 0.8) -> Stream[dict]:
         
-    NotImplementedError("Chat method is not implemented for the models.")
-
-    
-  
+    raise NotImplementedError("Chat method is not implemented for the models.")
