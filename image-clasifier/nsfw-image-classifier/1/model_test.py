@@ -5,7 +5,6 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 import requests
 from model import ImageClassifierModel
-from io import BytesIO
 from clarifai.runners.utils.data_types import Image, Video
 model = ImageClassifierModel()
 model.load_model()

@@ -2,19 +2,18 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(__file__))
-from typing import List
+from typing import List, Iterator
 
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.model_class import ModelClass
-from clarifai.runners.utils.data_types import Image, Stream
+from clarifai.runners.utils.data_types import Image
 from openai import OpenAI
 from openai_client_wrapper import OpenAIWrapper
 from openai_server_starter import OpenAI_APIServer
 
 ##################
 
-
-class MyRunner(ModelClass):
+class SglangModel(ModelClass):
   """
   A custom runner that integrates with the Clarifai platform and uses Server inference
   to process inputs, including text and images.
@@ -96,7 +95,7 @@ class MyRunner(ModelClass):
                chat_history: List[dict] = None,
                max_tokens: int = 512,
                temperature: float = 0.7,
-               top_p: float = 0.8) -> Stream[str]:
+               top_p: float = 0.8) -> Iterator[str]:
     """Example yielding a whole batch of streamed stuff back."""
     for chunk in self.client.chat(
         prompt=prompt,
@@ -117,7 +116,7 @@ class MyRunner(ModelClass):
            messages: List[dict],
            max_tokens: int = 512,
            temperature: float = 0.7,
-           top_p: float = 0.8) -> Stream[dict]:
+           top_p: float = 0.8) -> Iterator[dict]:
     """Chat with the model."""
     for chunk in self.client.chat(
         messages=messages,

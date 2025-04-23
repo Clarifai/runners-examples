@@ -11,7 +11,7 @@ from openai_client_wrapper import OpenAIWrapper
 from openai_server_starter import OpenAI_APIServer
 
 
-class MyRunner(ModelClass):
+class LlamaToolCallingModel(ModelClass):
   """
   A custom runner that integrates with the Clarifai platform and uses Server inference
   to process inputs, including text and images.
@@ -69,8 +69,8 @@ class MyRunner(ModelClass):
               max_tokens: int = 512,
               temperature: float = 0.7,
               top_p: float = 0.8) -> str:
-    """This is the method that will be called when the runner is run. It takes in an input and
-    returns an output.
+    """
+    Predict the response for the given prompt and chat history using the model and tools.
     """
     response= self.client.chat(
         prompt=prompt,
@@ -99,7 +99,7 @@ class MyRunner(ModelClass):
                max_tokens: int = 512,
                temperature: float = 0.7,
                top_p: float = 0.8) -> Iterator[str]:
-    """Example yielding a whole batch of streamed stuff back."""
+    """Stream generated text tokens from a prompt + optional chat history and tools."""
     for chunk in self.client.chat(
         prompt=prompt,
         messages=chat_history,

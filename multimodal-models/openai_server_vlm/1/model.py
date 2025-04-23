@@ -12,7 +12,7 @@ from openai_client_wrapper import OpenAIWrapper
 from openai_server_starter import OpenAI_APIServer
 
 
-class MyRunner(ModelClass):
+class MyModel(ModelClass):
   """
   A custom runner that integrates with the Clarifai platform and uses Server inference
   to process inputs, including text and images.
@@ -75,8 +75,8 @@ class MyRunner(ModelClass):
               max_tokens: int = 512,
               temperature: float = 0.7,
               top_p: float = 0.8) -> str:
-    """This is the method that will be called when the runner is run. It takes in an input and
-    returns an output.
+    """
+    Predict the response for the given prompt and chat history using the model.
     """
     response =  self.client.chat(
         prompt=prompt,
@@ -86,11 +86,6 @@ class MyRunner(ModelClass):
         max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p)
-    if response.usage and response.usage.prompt_tokens and response.usage.completion_tokens:
-      # Set the output context with the number of tokens used
-      # for both prompt and completion.
-      self.set_output_context(prompt_tokens= response.usage.prompt_tokens,
-                              completion_tokens= response.usage.completion_tokens)
     return response.choices[0].message.content
 
   @ModelClass.method
@@ -102,7 +97,9 @@ class MyRunner(ModelClass):
                max_tokens: int = 512,
                temperature: float = 0.7,
                top_p: float = 0.8) -> Iterator[str]:
-    """Example yielding a whole batch of streamed stuff back."""
+    """
+    Stream generated text tokens from a prompt + optional chat history
+    """
     for chunk in self.client.chat(
         prompt=prompt,
         image=image,
@@ -115,9 +112,6 @@ class MyRunner(ModelClass):
       if chunk.choices:
         text = (chunk.choices[0].delta.content
                 if (chunk and chunk.choices[0].delta.content) is not None else '')
-        if chunk.usage and chunk.usage.prompt_tokens and chunk.usage.completion_tokens:
-          self.set_output_context(prompt_tokens= chunk.usage.prompt_tokens,
-                                  completion_tokens= chunk.usage.completion_tokens)
         yield text
 
   @ModelClass.method
@@ -133,7 +127,4 @@ class MyRunner(ModelClass):
         temperature=temperature,
         top_p=top_p,
         stream=True):
-      if chunk.usage and chunk.usage.prompt_tokens and chunk.usage.completion_tokens:
-        self.set_output_context(prompt_tokens= chunk.usage.prompt_tokens,
-                                completion_tokens= chunk.usage.completion_tokens)
       yield chunk.to_dict()

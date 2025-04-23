@@ -23,11 +23,11 @@ inference_params = dict(
   eta=1
 )
 
-prompt = [""]
+prompt=["A Ghibli animated orange cat, panicked about a deadline, sits in front of a Banana-brand laptop."]*3, 
 
 # Model Predict
 model = Model("https://clarifai.com/black-forest-labs/models/flux_1-schnell")
-images: List[Image] = model.predict(prompt=prompt)
+images: List[Image] = model.predict(prompt=prompt, **inference_params)
 images[0].to_pil().save("tmp.jpg")
 ```
 
