@@ -1,8 +1,7 @@
 from typing import List
 
-from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.model_class import ModelClass
-from clarifai.runners.utils.data_types import Image, Stream
+from clarifai.runners.utils.data_types import Image
 
 from vllm import LLM, SamplingParams
 
@@ -130,30 +129,3 @@ class MyRunner(ModelClass):
                 top_p=top_p,
                 max_tokens=max_tokens
     )
-  
-  @ModelClass.method
-  def generate(self,
-              prompt: str,
-              images: List[Image]=None,
-              chat_history: List[dict]=None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> str:
-  
-    return chat_completion(llm=self.client,
-                prompt=prompt,
-                images=images,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens
-    )
-    
-  
-  @ModelClass.method 
-  def chat(self,
-           messages: List[dict],
-           max_tokens: int = 512,
-           temperature: float = 0.7,
-           top_p: float = 0.8) -> Stream[dict]:
-        
-    raise NotImplementedError("Chat method is not implemented for the models.")
