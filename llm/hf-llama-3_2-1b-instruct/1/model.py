@@ -7,6 +7,7 @@ from clarifai.runners.models.model_class import ModelClass
 from clarifai.utils.logging import logger
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.utils.openai_convertor import openai_response
+from clarifai.runners.utils.data_utils import InputField
 from transformers import (AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer)
 
 
@@ -40,9 +41,9 @@ class MyModel(ModelClass):
   def predict(self,
               prompt: str ="",
               chat_history: List[dict] = None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> str:
+              max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> str:
     """
     Predict the response for the given prompt and chat history using the model.
     """
@@ -57,7 +58,7 @@ class MyModel(ModelClass):
     inputs = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
 
     generation_kwargs = {
-        "input_ids": inputs["input_ids"],
+        "input_ids": inputs,
         "do_sample": True,
         "max_new_tokens": max_tokens,
         "temperature": temperature,
@@ -66,17 +67,18 @@ class MyModel(ModelClass):
     }
 
     output = self.model.generate(**generation_kwargs)
-    generated_tokens = output[0][inputs["input_ids"].shape[-1]:]
+    generated_tokens = output[0][inputs.shape[-1]:]
     return self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
   @ModelClass.method
   def generate(self,
               prompt: str="",
               chat_history: List[dict] = None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> Iterator[str]:
+              max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> Iterator[str]:
       """Stream generated text tokens from a prompt + optional chat history."""
+
 
       # Construct chat-style messages
       messages = chat_history if chat_history else []
@@ -93,21 +95,21 @@ class MyModel(ModelClass):
           top_p=top_p
       )
       for each in response:
-        yield each['choices'][0]['delta']['content']
+        yield each['choices'][0]['message']['content']
 
 
   @ModelClass.method
   def chat(self,
           messages: List[dict],
-          max_tokens: int = 512,
-          temperature: float = 0.7,
-          top_p: float = 0.8) -> Iterator[dict]:
+          max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+          temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+          top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+          ) -> Iterator[dict]:
       """
       Stream back JSON dicts for assistant messages.
       Example return format:
       {"role": "assistant", "content": [{"type": "text", "text": "response here"}]}
       """
-
       # Tokenize using chat template
       inputs = self.tokenizer.apply_chat_template(
           messages,
@@ -117,7 +119,7 @@ class MyModel(ModelClass):
       ).to(self.model.device)
 
       generation_kwargs = {
-          "input_ids": inputs["input_ids"],
+          "input_ids": inputs,
           "do_sample": True,
           "max_new_tokens": max_tokens,
           "temperature": temperature,
@@ -130,8 +132,8 @@ class MyModel(ModelClass):
       thread.start()
 
       # Accumulate response text
-      for token_text in self.streamer:
-         yield openai_response(token_text)
+      for chunk in openai_response(self.streamer):
+          yield chunk
 
       thread.join()
 
