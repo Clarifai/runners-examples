@@ -1,5 +1,5 @@
 model:
-  id: "llama_3_2_1b_instruct"
+  id: "hf-llama_3_2_1b_instruct-3"
   user_id: "user_id"
   app_id: "app_id"
   model_type_id: "text-to-text"
