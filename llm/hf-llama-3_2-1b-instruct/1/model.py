@@ -94,8 +94,10 @@ class MyModel(ModelClass):
           temperature=temperature,
           top_p=top_p
       )
+      
       for each in response:
-        yield each['choices'][0]['message']['content']
+          if 'choices' in each and 'delta' in each['choices'][0] and 'content' in each['choices'][0]['delta']:
+                  yield each['choices'][0]['delta']['content']
 
 
   @ModelClass.method
