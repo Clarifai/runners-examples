@@ -1,7 +1,7 @@
 model:
-  id: "hf-llama_3_2_1b_instruct-1"
-  user_id: "frontend-user"
-  app_id: "New-Model-Tests"
+  id: "hf-llama_3_2_1b_instruct-3"
+  user_id: "user_id"
+  app_id: "app_id"
   model_type_id: "text-to-text"
 
 build_info:

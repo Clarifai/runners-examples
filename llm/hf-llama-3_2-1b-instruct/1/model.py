@@ -7,7 +7,7 @@ from clarifai.runners.models.model_class import ModelClass
 from clarifai.utils.logging import logger
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.utils.openai_convertor import openai_response
-from clarifai.runners.utils.data_utils import InputField
+from clarifai.runners.utils.data_utils import Param
 from transformers import (AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer)
 
 
@@ -41,9 +41,9 @@ class MyModel(ModelClass):
   def predict(self,
               prompt: str ="",
               chat_history: List[dict] = None,
-              max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
-              temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
-              top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> str:
+              max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> str:
     """
     Predict the response for the given prompt and chat history using the model.
     """
@@ -74,9 +74,9 @@ class MyModel(ModelClass):
   def generate(self,
               prompt: str="",
               chat_history: List[dict] = None,
-              max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
-              temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
-              top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> Iterator[str]:
+              max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )) -> Iterator[str]:
       """Stream generated text tokens from a prompt + optional chat history."""
 
 
@@ -101,9 +101,9 @@ class MyModel(ModelClass):
   @ModelClass.method
   def chat(self,
           messages: List[dict],
-          max_tokens: int = InputField(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
-          temperature: float = InputField(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
-          top_p: float = InputField(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+          max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+          temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+          top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
           ) -> Iterator[dict]:
       """
       Stream back JSON dicts for assistant messages.
