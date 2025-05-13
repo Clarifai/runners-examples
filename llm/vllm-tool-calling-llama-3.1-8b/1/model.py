@@ -6,6 +6,7 @@ from typing import List, Iterator
 
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.model_class import ModelClass
+from clarifai.runners.utils.data_utils import Param
 from openai import OpenAI
 from openai_client_wrapper import OpenAIWrapper
 from openai_server_starter import OpenAI_APIServer
@@ -66,16 +67,24 @@ class LlamaToolCallingModel(ModelClass):
               prompt: str,
               chat_history: List[dict] = None,
               tools: List[dict] = None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> str:
+              tool_choice: str = Param(default=None, description="The tool choice for the model. If set to 'auto', Controls which (if any) tool is called by the model.",),
+              max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+              ) -> str:
     """
     Predict the response for the given prompt and chat history using the model and tools.
     """
+    if tools is None and tool_choice is None:
+      tool_choice = "none"
+    elif tools is not None and tool_choice is None:
+      tool_choice = "auto"
+      
     response= self.client.chat(
         prompt=prompt,
         messages=chat_history,
         tools=tools,
+        tool_choice=tool_choice,
         max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p)
@@ -96,14 +105,21 @@ class LlamaToolCallingModel(ModelClass):
                prompt: str,
                chat_history: List[dict] = None,
                tools: List[dict] = None,
-               max_tokens: int = 512,
-               temperature: float = 0.7,
-               top_p: float = 0.8) -> Iterator[str]:
+              tool_choice: str = Param(default=None, description="The tool choice for the model. If set to 'auto', Controls which (if any) tool is called by the model.",),
+              max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+              temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+              top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+               ) -> Iterator[str]:
     """Stream generated text tokens from a prompt + optional chat history and tools."""
+    if tools is None and tool_choice is None:
+      tool_choice = "none"
+    elif tools is not None and tool_choice is None:
+      tool_choice = "auto"
     for chunk in self.client.chat(
         prompt=prompt,
         messages=chat_history,
         tools=tools,
+        tool_choice=tool_choice,
         max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p,
@@ -128,13 +144,23 @@ class LlamaToolCallingModel(ModelClass):
   def chat(self,
            messages: List[dict],
            tools: List[dict] = None,
+           tool_choice: str = None,
            max_tokens: int = 512,
            temperature: float = 0.7,
            top_p: float = 0.8) -> Iterator[dict]:
     """Chat with the model."""
+    if tools is None and tool_choice is None:
+      tool_choice = "none"
+    elif tools is not None and tool_choice is None:
+      # If tools are provided, set tool_choice to "auto"
+      # This will allow the model to choose the tool automatically
+      # based on the input message
+      # and the available tools
+      tool_choice = "auto"
     for chunk in self.client.chat(
         messages=messages,
         tools=tools,
+        tool_choice=tool_choice,
         max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p,
