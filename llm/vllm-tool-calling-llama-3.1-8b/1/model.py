@@ -112,9 +112,9 @@ class LlamaToolCallingModel(ModelClass):
                ) -> Iterator[str]:
     """Stream generated text tokens from a prompt + optional chat history and tools."""
     if tools is None and tool_choice is None:
-      tool_choice = "none"
+        tool_choice = "none"
     elif tools is not None and tool_choice is None:
-      tool_choice = "auto"
+        tool_choice = "auto"
     for chunk in self.client.chat(
         prompt=prompt,
         messages=chat_history,
@@ -144,10 +144,11 @@ class LlamaToolCallingModel(ModelClass):
   def chat(self,
            messages: List[dict],
            tools: List[dict] = None,
-           tool_choice: str = None,
-           max_tokens: int = 512,
-           temperature: float = 0.7,
-           top_p: float = 0.8) -> Iterator[dict]:
+            tool_choice: str = Param(default=None, description="The tool choice for the model. If set to 'auto', Controls which (if any) tool is called by the model.",),
+            max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+            temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+            top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+           ) -> Iterator[dict]:
     """Chat with the model."""
     if tools is None and tool_choice is None:
       tool_choice = "none"
