@@ -13,8 +13,7 @@ from clarifai.runners.utils.data_utils import Param
 
 class LlamaModel(OpenAIModelClass):
   """
-  A custom runner that integrates with the Clarifai platform and uses Server inference
-  to process inputs, including text and images.
+  A Model that integrates with the Clarifai platform and uses vLLM framework for inference to run the Llama 3.1 8B model with tool calling capabilities.
   """
   client = True  # This will be set in load_model method
   model = True  # This will be set in load_model method
@@ -75,7 +74,7 @@ class LlamaModel(OpenAIModelClass):
               top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass."), 
               ) -> str:
     """
-    Predict the response for the given prompt and chat history using the model and tools.
+    This method is used to predict the response for the given prompt and chat history using the model and tools.
     """
 
     if tools is not None and tool_choice is None:
@@ -112,7 +111,9 @@ class LlamaModel(OpenAIModelClass):
                max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
                temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
                top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.")) -> Iterator[str]:
-    """Stream generated text tokens from a prompt + optional chat history and tools."""
+    """
+    This method is used to stream generated text tokens from a prompt + optional chat history and tools.
+    """
     messages = build_openai_messages(prompt=prompt, messages=chat_history)
     response = self.client.chat.completions.create(
         model=self.model,

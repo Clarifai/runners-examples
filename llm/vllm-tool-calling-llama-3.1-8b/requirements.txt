@@ -10,7 +10,6 @@ qwen-vl-utils==0.0.8
 timm
 openai
 clarifai==11.4.9
-clarifai-protocol>=0.0.22
 psutil
 
 torch==2.6.0
