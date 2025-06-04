@@ -3,6 +3,7 @@ from threading import Thread
 import os
 import torch
 
+from clarifai.runners.utils.data_utils import Param
 from clarifai.runners.models.model_class import ModelClass
 from clarifai.utils.logging import logger
 from clarifai.runners.models.model_builder import ModelBuilder
@@ -37,12 +38,14 @@ class MyModel(ModelClass):
     logger.info("Done loading!")
 
   @ModelClass.method
-  def predict(self,
-              prompt: str ="",
-              chat_history: List[dict] = None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> str:
+  def predict(
+    self,
+    prompt: str ="",
+    chat_history: List[dict] = None,
+    max_tokens: int = Param(default=512, description="An upper bound for the number of tokens that can be generated for a completion.", ),
+    temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+    top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", ),
+  ) -> str:
     """
     Predict the response for the given prompt and chat history using the model.
     """
@@ -70,12 +73,14 @@ class MyModel(ModelClass):
     return self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
   @ModelClass.method
-  def generate(self,
-              prompt: str="",
-              chat_history: List[dict] = None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> Iterator[str]:
+  def generate(
+    self,
+    prompt: str="",
+    chat_history: List[dict] = None,
+    max_tokens: int = Param(default=512, description="An upper bound for the number of tokens that can be generated for a completion.", ),
+    temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+    top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", ),
+  ) -> Iterator[str]:
       """Stream generated text tokens from a prompt + optional chat history."""
 
       # Construct chat-style messages
@@ -97,11 +102,13 @@ class MyModel(ModelClass):
 
 
   @ModelClass.method
-  def chat(self,
-          messages: List[dict],
-          max_tokens: int = 512,
-          temperature: float = 0.7,
-          top_p: float = 0.8) -> Iterator[dict]:
+  def chat(
+    self,
+    messages: List[dict],
+    max_tokens: int = Param(default=512, description="An upper bound for the number of tokens that can be generated for a completion.", ),
+    temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+    top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", ),
+  ) -> Iterator[dict]:
       """
       Stream back JSON dicts for assistant messages.
       Example return format:
