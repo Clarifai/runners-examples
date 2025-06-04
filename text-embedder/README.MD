@@ -1,5 +1,9 @@
-## Jina Embeddings v3 ONNX Model
+# Jina Embeddings v3 ONNX Model
 This is a text embedding model that uses the Jina AI v3 model optimized with ONNX runtime for efficient inference. The model generates high-quality text embeddings suitable for semantic search, text similarity, and other NLP tasks.
+
+### Model Config
+
+In the `config.yaml` file CPU memory is set as 5Gis, since the onnx version of model is used and it requires significant CPU memory.
 
 ### Benefits of ONNX Implementation
 
