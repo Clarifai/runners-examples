@@ -1,8 +1,5 @@
 # Standard library imports
 import os
-import tempfile
-import time
-from io import BytesIO
 from typing import List, Dict, Any, Iterator
 
 # Third-party imports
@@ -12,22 +9,10 @@ from PIL import Image as PILImage
 from transformers import DetrForObjectDetection, DetrImageProcessor
 
 # Clarifai imports
-from clarifai.runners.models.model_class import ModelClass
 from clarifai.runners.models.model_builder import ModelBuilder
-from clarifai.runners.utils.data_types import Concept, Image, Video, Region
+from clarifai.runners.models.visual_detector_class import VisualDetectorClass
+from clarifai.runners.utils.data_types import Image, Video, Region, Frame
 from clarifai.utils.logging import logger
-
-
-def preprocess_image(image_bytes: bytes) -> PILImage:
-    """Convert image bytes into RGB format suitable for model processing.
-
-    Args:
-        image_bytes: Raw image data in bytes format
-
-    Returns:
-        PIL Image object in RGB format ready for model input
-    """
-    return PILImage.open(BytesIO(image_bytes)).convert("RGB")
 
 
 def detect_objects(
@@ -54,69 +39,7 @@ def detect_objects(
     return results
 
 
-def process_detections(
-    results: List[Dict[str, torch.Tensor]],
-    images: List[PILImage],
-    threshold: float,
-    model_labels: Dict[int, str]
-) -> List[List[Region]]:
-    """Convert model outputs into a structured format of detections.
-
-    Args:
-        results: Raw detection results from model
-        images: Original input images
-        threshold: Confidence threshold for detections
-        model_labels: Dictionary mapping label indices to names
-
-    Returns:
-        List of lists containing Region objects for each detection
-    """
-    outputs = []
-    for i, result in enumerate(results):
-        image = images[i]
-        detections = []
-        for score, label_idx, box in zip(result["scores"], result["labels"], result["boxes"]):
-            if score > threshold:
-                label = model_labels[label_idx.item()]
-                detections.append(
-                    Region(
-                        box=box.tolist(),
-                        concepts=[Concept(id=label, name=label, value=score.item())]
-                    )
-                )
-        outputs.append(detections)
-    return outputs
-
-
-def video_to_frames(video_bytes: bytes) -> Iterator[bytes]:
-    """Convert video bytes to frames.
-
-    Args:
-        video_bytes: Raw video data in bytes
-
-    Yields:
-        JPEG encoded frame data as bytes
-    """
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
-        temp_video_file.write(video_bytes)
-        temp_video_path = temp_video_file.name
-        logger.info(f"temp_video_path: {temp_video_path}")
-
-        video = cv2.VideoCapture(temp_video_path)
-        logger.info(f"video opened: {video.isOpened()}")
-        
-        while video.isOpened():
-            ret, frame = video.read()
-            if not ret:
-                break
-            frame_bytes = cv2.imencode('.jpg', frame)[1].tobytes()
-            yield frame_bytes
-            
-        video.release()
-        os.unlink(temp_video_path)
-
-
-class MyRunner(ModelClass):
+class MyRunner(VisualDetectorClass):
     """A custom runner for DETR object detection model that processes images and videos"""
 
     def load_model(self):
@@ -136,48 +59,42 @@ class MyRunner(ModelClass):
 
         logger.info("Done loading!")
 
-    @ModelClass.method 
+    @VisualDetectorClass.method
     def predict(self, image: Image) -> List[Region]:
         """Process a single image and return detected objects."""
         image_bytes = image.bytes
-        image = preprocess_image(image_bytes)
+        image = VisualDetectorClass.preprocess_image(image_bytes)
         
         with torch.no_grad():
             results = detect_objects([image], self.model, self.processor, self.device)
-            outputs = process_detections(results, [image], self.threshold, self.model_labels)
+            outputs = VisualDetectorClass.process_detections(results, self.threshold, self.model_labels)
             return outputs[0]  # Return detections for single image
 
-    @ModelClass.method
-    def generate(self, video: Video) -> Iterator[List[Region]]:
+    @VisualDetectorClass.method
+    def generate(self, video: Video) -> Iterator[Frame]:
         """Process video frames and yield detected objects for each frame."""
-        video_bytes = video.bytes
-        frame_generator = video_to_frames(video_bytes)
+        frame_generator = VisualDetectorClass.video_to_frames(video.bytes)
         for frame in frame_generator:
-            image = preprocess_image(frame)
             with torch.no_grad():
+                image = VisualDetectorClass.preprocess_image(frame.image.bytes)
                 results = detect_objects([image], self.model, self.processor, self.device)
-                outputs = process_detections(results, [image], self.threshold, self.model_labels)
-                yield outputs[0]  # Yield detections for each frame
+                outputs = VisualDetectorClass.process_detections(results, self.threshold, self.model_labels)
+                frame.regions = outputs[0]  # Assign detections to the frame
+                yield frame  # Yield the frame with detections
 
-    @ModelClass.method
+    @VisualDetectorClass.method
     def stream_image(self, image_stream: Iterator[Image]) -> Iterator[List[Region]]:
         """Stream process image inputs."""
-        logger.info("Starting stream processing for images")
         for image in image_stream:
-            start_time = time.time()
             result = self.predict(image)
             yield result
-            logger.info(f"Processing time: {time.time() - start_time:.3f}s")
 
-    @ModelClass.method
-    def stream_video(self, video_stream: Iterator[Video]) -> Iterator[List[Region]]:
+    @VisualDetectorClass.method
+    def stream_video(self, video_stream: Iterator[Video]) -> Iterator[Frame]:
         """Stream process video inputs."""
-        logger.info("Starting stream processing for videos")
         for video in video_stream:
-            start_time = time.time()
             for frame_result in self.generate(video):
                 yield frame_result
-            logger.info(f"Processing time: {time.time() - start_time:.3f}s")
         
     def test(self):
         """Test the model functionality."""
