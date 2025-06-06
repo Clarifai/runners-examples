@@ -1,4 +1,4 @@
-torch==2.5.1
+torch==2.6.0
 tokenizers>=0.19.1
 transformers>=4.44.2
 pillow>=10.4.0
