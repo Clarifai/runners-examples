@@ -1,5 +1,5 @@
-torch==2.5.1
-tokenizers==0.21.0
+torch==2.6.0
+tokenizers==0.21.1
 accelerate==1.2.0
 optimum==1.23.3
 xformers
@@ -10,10 +10,9 @@ ninja
 qwen-vl-utils==0.0.8
 timm
 openai
-clarifai>=11.3.0
-clarifai-protocol>=0.0.20
+clarifai>=11.5.0,<12.0.0
 psutil
 --extra-index-url https://flashinfer.ai/whl/cu124/torch2.4/
 flashinfer
-sglang[all]==0.3.6
-transformers==4.48.3
+sglang[all]==0.4.6
+transformers==4.51.1
