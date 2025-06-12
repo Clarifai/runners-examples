@@ -1,4 +1,4 @@
-# Config file for the VLLM runner
+# Config file for the Sglang runner
 
 model:
   id: "SmolLM2-1_7B-Instruct"
