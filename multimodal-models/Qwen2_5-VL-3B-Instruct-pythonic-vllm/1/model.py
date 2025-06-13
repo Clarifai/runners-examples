@@ -1,131 +1,141 @@
-from typing import List
+import os
+import sys
 
-from clarifai.runners.models.model_class import ModelClass
+sys.path.append(os.path.dirname(__file__))
+from typing import Iterator, List
+
+from clarifai.runners.models.model_builder import ModelBuilder
+from clarifai.runners.models.openai_class import OpenAIModelClass
 from clarifai.runners.utils.data_types import Image
+from clarifai.runners.utils.data_utils import Param
+from clarifai.runners.utils.openai_convertor import build_openai_messages
+from clarifai.utils.logging import logger
+from openai import OpenAI
+from openai_server_starter import OpenAI_APIServer
 
-from vllm import LLM, SamplingParams
 
-
-def qwen2_vl_template(question: str, modality: str, images: list):
-    try:
-        from qwen_vl_utils import process_vision_info
-        from transformers import AutoProcessor
-    except ModuleNotFoundError:
-        print('WARNING: `qwen-vl-utils` not installed, input images will not '
-              'be automatically resized. You can enable this functionality by '
-              '`pip install qwen-vl-utils`.')
-        
-    if modality == 'image':
-        placeholders = [{"type": "image", "image": data} 
-                        for img in images 
-                        if (data := img.url or img.bytes)]
-        messages = [{
-            "role": "system",
-            "content": "You are a helpful assistant."
-        }, {
-            "role":
-            "user",
-            "content": [
-                *placeholders,
-                {
-                    "type": "text",
-                    "text": question
-                },
-            ],
-        }]
-        processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-        prompt = processor.apply_chat_template(messages,
-                                            tokenize=False,
-                                            add_generation_prompt=True)
-        
-        image_data, _ = process_vision_info(messages)
-        return prompt, image_data
-
-def apply_prompt_template(text,
-                   images = None):
-    if images:
-        prompt_template, img_bytes = qwen2_vl_template(text, 'image', images)
-        return prompt_template, img_bytes
-    else:
-        prompt_template = text
-        return prompt_template
-        
-def chat_completion(llm,
-                     prompt,
-                     images,
-                     temperature,
-                     max_tokens,
-                     top_p
-    ):
-    
-    params = SamplingParams(
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_p=top_p
-    )
-    
-    if images:
-        prompt, img_bytes = apply_prompt_template(prompt,images)
-        outputs = llm.generate({
-                "prompt": prompt,
-                "multi_modal_data": {
-                    "image": [img_bytes]
-                        },
-                    },
-                use_tqdm=False,
-                sampling_params=params
-                )
-    else:
-        outputs = llm.generate({
-                "prompt": prompt,
-                },
-                use_tqdm=False,
-                sampling_params=params
-                )
-    for o in outputs:
-        generated_text = o.outputs[0].text
-    return generated_text
-        
-class MyRunner(ModelClass):
-  """
-  A custom runner that integrates with the Clarifai platform and uses Server inference
-  to process inputs, including text and images.
-  """
-
-  def load_model(self):
-    """Load the model here and start the  server."""
-    
-    self.client = LLM(
-        model="Qwen/Qwen2.5-VL-3B-Instruct",
-        max_model_len=16000,
-        max_num_seqs=5,
-        # Note - mm_processor_kwargs can also be passed to generate/chat calls
-        mm_processor_kwargs={
-            "min_pixels": 28 * 28,
-            "max_pixels": 1280 * 28 * 28,
-        },
-        trust_remote_code=True
-    )
-    
-    return self.client
-
-  @ModelClass.method
-  def predict(self,
-              prompt: str,
-              images: List[Image]=None,
-              chat_history: List[dict]=None,
-              max_tokens: int = 512,
-              temperature: float = 0.7,
-              top_p: float = 0.8) -> str :
-    
-    """This is the method that will be called when the runner is run. It takes in an input and
-    returns an output.
+class VLLMModel(OpenAIModelClass):
     """
-    
-    return chat_completion(llm=self.client,
-                prompt=prompt,
-                images=images,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens
-    )
+    A custom runner that integrates with the Clarifai platform and uses Server inference
+    to process inputs, including text and images.
+    """
+
+    client = True  # This will be set in load_model method
+    model = True  # This will be set in load_model method
+
+    def load_model(self):
+        """Load the model here and start the server."""
+        os.path.join(os.path.dirname(__file__))
+
+        server_args = {
+            'max_model_len': '8192',
+            'gpu_memory_utilization': 0.95,
+            'dtype': 'auto',
+            'task': 'auto',
+            'kv_cache_dtype': 'auto',
+            'tensor_parallel_size': 1,
+            'chat_template': None,
+            'cpu_offload_gb': 0.0,
+            'quantization': None,
+            'port': 23333,
+            'host': 'localhost',
+            'checkpoints': 'runtime'
+        }
+
+        stage = server_args.get("checkpoints")
+        if stage in ["build", "runtime"]:
+            config_path = os.path.dirname(os.path.dirname(__file__))
+            builder = ModelBuilder(config_path, download_validation_only=True)
+            checkpoints = builder.download_checkpoints(stage=stage)
+            server_args.update({"checkpoints": checkpoints})
+
+        if server_args.get("additional_list_args") == ['']:
+            server_args.pop("additional_list_args")
+
+        # Start server
+        # This line were generated by `upload` module
+        self.server = OpenAI_APIServer.from_vllm_backend(**server_args)
+
+        self.client = OpenAI(
+                api_key="notset",
+                base_url=VLLMModel.make_api_url(self.server.host, self.server.port))
+        self.model = self._get_model()
+
+        logger.info(f"OpenAI {self.model} model loaded successfully!")
+
+    def _get_model(self):
+        try:
+            return self.client.models.list().data[0].id
+        except Exception as e:
+            raise ConnectionError("Failed to retrieve model ID from API") from e
+
+    @staticmethod
+    def make_api_url(host: str, port: int, version: str = "v1") -> str:
+        return f"http://{host}:{port}/{version}"
+
+    @OpenAIModelClass.method
+    def predict(self,
+                prompt: str,
+                image: Image = None,
+                images: List[Image] = None,
+                chat_history: List[dict] = None,
+                max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+                temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+                top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+                ) -> str:
+        """This is the method that will be called when the runner is run. It takes in an input and
+        returns an output.
+        """
+        openai_messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=openai_messages,
+            max_completion_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p)
+        if response.usage and response.usage.prompt_tokens and response.usage.completion_tokens:
+            self.set_output_context(prompt_tokens=response.usage.prompt_tokens, completion_tokens=response.usage.completion_tokens)
+        return response.choices[0].message.content
+
+    @OpenAIModelClass.method
+    def generate(self,
+                prompt: str,
+                image: Image = None,
+                images: List[Image] = None,
+                chat_history: List[dict] = None,
+                max_tokens: int = Param(default=512, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
+                temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
+                top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
+                ) -> Iterator[str]:
+        """Example yielding a whole batch of streamed stuff back."""
+        openai_messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
+        for chunk in self.client.chat.completions.create(
+            model=self.model,
+            messages=openai_messages,
+            max_completion_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stream=True):
+            if chunk.choices:
+                text = (chunk.choices[0].delta.content
+                        if (chunk and chunk.choices[0].delta.content) is not None else '')
+                yield text
+
+    def test(self):
+        try:
+            print("Testing predict...")
+            print(self.predict(prompt="Explain why cat can't fly"))
+            print(self.predict(prompt="Describe this image", image=Image.from_url("https://samples.clarifai.com/metro-north.jpg")))
+        except Exception as e:
+            print(f"Error in predict {e}")
+
+        try:
+            print("Testing generate...")
+            for each in self.generate(prompt="Explain why cat can't fly"):
+                print(each, end=" ")
+            print()
+            for each in self.generate(prompt="Describe this image", image=Image.from_url("https://samples.clarifai.com/metro-north.jpg")):
+                print(each, end=" ")
+            print()
+        except Exception as e:
+            print(f"Error in generate {e}")
