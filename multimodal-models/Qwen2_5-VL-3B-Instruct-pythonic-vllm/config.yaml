@@ -14,7 +14,7 @@ inference_compute_info:
   cpu_memory: "14Gi"
   num_accelerators: 1
   accelerator_type: ["NVIDIA-*"]
-  accelerator_memory: "38Gi"
+  accelerator_memory: "44Gi"
 
 checkpoints:
   type: "huggingface"
