@@ -11,7 +11,7 @@ inference_compute_info:
   num_accelerators: 1
   accelerator_type:
   - NVIDIA-*
-  accelerator_memory: 21Gi
+  accelerator_memory: 44Gi
 num_threads: 64
 checkpoints:
   type: huggingface
