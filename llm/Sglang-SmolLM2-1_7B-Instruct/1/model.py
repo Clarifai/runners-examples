@@ -76,7 +76,9 @@ class SglangModel(OpenAIModelClass):
                     'max_total_tokens': '8192',
                     'max_prefill_tokens': None,
                     'schedule_policy': 'fcfs',
-                    'schedule_conservativeness': 1.0,}
+                    'schedule_conservativeness': 1.0,
+                    'trust_remote_code': True,
+                    }
         
         checkpoints = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
