@@ -10,10 +10,10 @@ from openai import OpenAI
 
 PYTHON_EXEC = sys.executable
 
-def from_sglang_backend(checkpoints, **kwargs):
+def sglang_openai_server(checkpoints, **kwargs):
     """Start SGlang OpenAI compatible server."""
     
-    from sglang.utils import execute_shell_command, wait_for_server
+    from sglang.utils import execute_shell_command, wait_for_server, terminate_process
     # Start building the command
     cmds = [
         PYTHON_EXEC, '-m', 'sglang.launch_server',
@@ -45,7 +45,7 @@ def from_sglang_backend(checkpoints, **kwargs):
     except Exception as e:
         logger.error(f"Failed to start sglang server: {str(e)}")
         if server.process:
-            server.process.terminate()
+            terminate_process(server.process)
         raise RuntimeError(f"Failed to start sglang server: {str(e)}")
 
     return server
@@ -83,7 +83,7 @@ class SglangModel(OpenAIModelClass):
         checkpoints = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
         # Start server
-        self.server = from_sglang_backend(checkpoints, **server_args)
+        self.server = sglang_openai_server(checkpoints, **server_args)
 
         # Create client
         self.client = OpenAI(
