@@ -35,7 +35,7 @@ def sglang_openai_server(checkpoints, **kwargs):
         'port': kwargs.get('port', 23333),
         'backend': "sglang",
         'process': None
-    })
+    })()
     
     try:
         server.process = execute_shell_command(" ".join(cmds))
