@@ -1,5 +1,3 @@
-# Config file for the Sglang runner
-
 model:
   id: "SmolLM2-1_7B-Instruct"
   user_id: "USER_ID"
