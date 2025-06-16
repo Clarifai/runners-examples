@@ -7,12 +7,13 @@ from clarifai.runners.utils.data_utils import Param
 from clarifai.runners.utils.openai_convertor import build_openai_messages
 from clarifai.utils.logging import logger
 from openai import OpenAI
-from sglang.utils import execute_shell_command, wait_for_server
 
 PYTHON_EXEC = sys.executable
 
 def from_sglang_backend(checkpoints, **kwargs):
     """Start SGlang OpenAI compatible server."""
+    
+    from sglang.utils import execute_shell_command, wait_for_server
     # Start building the command
     cmds = [
         PYTHON_EXEC, '-m', 'sglang.launch_server',
@@ -46,7 +47,8 @@ def from_sglang_backend(checkpoints, **kwargs):
 
     logger.info("Waiting for " + f"http://{server.host}:{server.port}")
     wait_for_server(f"http://{server.host}:{server.port}")
-    logger.info("Done")
+    logger.info("Server started successfully at " + f"http://{server.host}:{server.port}")
+    # Return the server instance
 
     return server
 
