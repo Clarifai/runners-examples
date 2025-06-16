@@ -15,3 +15,8 @@ inference_compute_info:
   num_accelerators: 1
   accelerator_type: ["NVIDIA-*"]
   accelerator_memory: "44Gi"
+
+checkpoints:
+  type: "huggingface"
+  repo_id: "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+  hf_token: "hf_token"
