@@ -23,18 +23,12 @@ def from_sglang_backend(checkpoints, **kwargs):
     for key, value in kwargs.items():
         if value is None:  # Skip None values
             continue
-            
-        # Convert parameter name from snake_case to kebab-case
         param_name = key.replace('_', '-')
-        
-        # Handle boolean parameters
         if isinstance(value, bool):
             if value:  # Only add the flag if True
                 cmds.append(f'--{param_name}')
         else:
             cmds.extend([f'--{param_name}', str(value)])
-
-    logger.info("CMDS to run `sglang` server: ", " ".join(cmds), "\n")
     # Create server instance
     server = type('Server', (), {
         'host': kwargs.get('host', '0.0.0.0'),
@@ -43,12 +37,16 @@ def from_sglang_backend(checkpoints, **kwargs):
         'process': None
     })
     
-    server.process = execute_shell_command(" ".join(cmds))
-
-    logger.info("Waiting for " + f"http://{server.host}:{server.port}")
-    wait_for_server(f"http://{server.host}:{server.port}")
-    logger.info("Server started successfully at " + f"http://{server.host}:{server.port}")
-    # Return the server instance
+    try:
+        server.process = execute_shell_command(" ".join(cmds))
+        logger.info("Waiting for " + f"http://{server.host}:{server.port}")
+        wait_for_server(f"http://{server.host}:{server.port}")
+        logger.info("Server started successfully at " + f"http://{server.host}:{server.port}")
+    except Exception as e:
+        logger.error(f"Failed to start sglang server: {str(e)}")
+        if server.process:
+            server.process.terminate()
+        raise RuntimeError(f"Failed to start sglang server: {str(e)}")
 
     return server
 
