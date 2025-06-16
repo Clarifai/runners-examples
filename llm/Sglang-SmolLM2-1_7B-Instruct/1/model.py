@@ -88,7 +88,7 @@ class SglangModel(OpenAIModelClass):
         # Create client
         self.client = OpenAI(
                 api_key="notset",
-                base_url= "http://{self.server.host}:{self.server.port}/v1")
+                base_url= f"http://{self.server.host}:{self.server.port}/v1")
         self.model = self.client.models.list().data[0].id
 
         logger.info(f"OpenAI {self.model} model loaded successfully!")
