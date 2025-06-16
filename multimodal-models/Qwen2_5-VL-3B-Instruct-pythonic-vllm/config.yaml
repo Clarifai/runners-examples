@@ -1,24 +1,22 @@
+# Config file for the vLLM runner
+
 model:
   id: "Qwen2_5-VL-3B-Instruct"
-  user_id: "mogith-p-n"
-  app_id: "test-co"
+  user_id: "user_id"
+  app_id: "app_id"
   model_type_id: "multimodal-to-text"
 
 build_info:
-  python_version: '3.11'
+  python_version: "3.11"
 
 inference_compute_info:
-  cpu_limit: '3'
-  cpu_memory: 14Gi
+  cpu_limit: "3"
+  cpu_memory: "14Gi"
   num_accelerators: 1
-  accelerator_type:
-  - NVIDIA-L40S
-  - NVIDIA-A100
-  - NVIDIA-H100
-  accelerator_memory: 38Gi
+  accelerator_type: ["NVIDIA-*"]
+  accelerator_memory: "44Gi"
 
 checkpoints:
-  type: huggingface
-  repo_id: Qwen/Qwen2.5-VL-3B-Instruct
-  hf_token: ""
-  when: runtime
+  type: "huggingface"
+  repo_id: "Qwen/Qwen2.5-VL-3B-Instruct"
+  hf_token: "hf_token"

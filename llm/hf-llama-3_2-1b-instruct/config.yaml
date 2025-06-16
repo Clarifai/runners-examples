@@ -1,5 +1,5 @@
 model:
-  id: "llama_3_2_1b_instruct"
+  id: "Llama-3.2-1B-Instruct"
   user_id: "user_id"
   app_id: "app_id"
   model_type_id: "text-to-text"
@@ -12,7 +12,7 @@ inference_compute_info:
   cpu_memory: "13Gi"
   num_accelerators: 1
   accelerator_type: ["NVIDIA-*"]
-  accelerator_memory: "18Gi"
+  accelerator_memory: "44Gi"
 
 checkpoints:
   type: "huggingface"
