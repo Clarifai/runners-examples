@@ -2,6 +2,7 @@ import os
 import sys
 
 from typing import Iterator, List
+import json
 
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.openai_class import OpenAIModelClass
@@ -34,11 +35,11 @@ def lmdeploy_openai_server(checkpoints, **kwargs):
             cmds.extend([f'--{param_name}', str(value)])
     # Create server instance
     server = type('Server', (), {
-        'host': kwargs.get('host', '0.0.0.0'),
-        'port': kwargs.get('port', 23333),
+        'host': kwargs.get('server_name', '0.0.0.0'),
+        'port': kwargs.get('server_port', 23333),
         'backend': "lmdeploy",
         'process': None
-    })
+    })()
     
     try:
         server.process = execute_shell_command(" ".join(cmds))
@@ -116,9 +117,7 @@ class MyRunner(OpenAIModelClass):
           top_p=top_p)
         
       if response.choices[0] and response.choices[0].message.tool_calls:
-        import json
         # If the response contains tool calls, return as a string
-
         tool_calls = response.choices[0].message.tool_calls
         tool_calls_json = json.dumps([tc.to_dict() for tc in tool_calls], indent=2)
         return tool_calls_json
@@ -154,7 +153,6 @@ class MyRunner(OpenAIModelClass):
         if chunk.choices:
           if chunk.choices[0].delta.tool_calls:
             # If the response contains tool calls, return the first one as a string
-            import json
             tool_calls = chunk.choices[0].delta.tool_calls
             tool_calls_json = [tc.to_dict() for tc in tool_calls]
             # Convert to JSON string
