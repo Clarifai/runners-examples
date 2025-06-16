@@ -55,7 +55,7 @@ def lmdeploy_openai_server(checkpoints, **kwargs):
     return server
 
 
-class MyRunner(OpenAIModelClass):
+class LMDeployModel(OpenAIModelClass):
     """
     A custom runner that integrates with the Clarifai platform and uses lmdeploy framework for inference
     """
