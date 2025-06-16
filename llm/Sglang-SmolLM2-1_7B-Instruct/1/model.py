@@ -52,8 +52,8 @@ def from_sglang_backend(checkpoints, **kwargs):
 
 class SglangModel(OpenAIModelClass):
     """
-    A custom runner that integrates with the Clarifai platform and uses Server inference
-    to process inputs, including text.
+    A Model that integrates with the Clarifai platform and uses SGlang framework for inference to run the SmolLM2-1.7B-Instruct model.
+    This model is designed to be compatible with OpenAI API standards.
     """
 
     client = True  # This will be set in load_model method
@@ -101,8 +101,8 @@ class SglangModel(OpenAIModelClass):
                 temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
                 top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
                 ) -> str:
-        """This is the method that will be called when the runner is run. It takes in an input and
-        returns an output.
+        """
+        Generate a response based on the provided prompt and chat history, where stream=False.
         """
         openai_messages = build_openai_messages(prompt=prompt, messages=chat_history)
         response = self.client.chat.completions.create(
@@ -123,7 +123,7 @@ class SglangModel(OpenAIModelClass):
                 temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
                 top_p: float = Param(default=0.8, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.", )
                 ) -> Iterator[str]:
-        """Example yielding a whole batch of streamed stuff back."""
+        """Generate a response based on the provided prompt and chat history, where stream=True."""
         openai_messages = build_openai_messages(prompt=prompt, messages=chat_history)
         for chunk in self.client.chat.completions.create(
             model=self.model,
