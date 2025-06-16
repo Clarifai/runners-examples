@@ -13,7 +13,7 @@ PYTHON_EXEC = sys.executable
 def sglang_openai_server(checkpoints, **kwargs):
     """Start SGlang OpenAI compatible server."""
     
-    from sglang.utils import execute_shell_command, wait_for_server, terminate_process
+    from clarifai.runners.utils.model_utils import execute_shell_command, wait_for_server, terminate_process
     # Start building the command
     cmds = [
         PYTHON_EXEC, '-m', 'sglang.launch_server',
@@ -91,7 +91,7 @@ class SglangModel(OpenAIModelClass):
                 base_url= f"http://{self.server.host}:{self.server.port}/v1")
         self.model = self.client.models.list().data[0].id
 
-        logger.info(f"OpenAI {self.model} model loaded successfully!")
+        logger.info(f"{self.model} model loaded successfully!")
 
     @OpenAIModelClass.method
     def predict(self,
