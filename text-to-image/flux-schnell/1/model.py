@@ -1,10 +1,10 @@
+import os
 from typing import List
 
-from PIL import Image
-import numpy as np
 from clarifai.runners.models.model_class import ModelClass
 from clarifai.runners.utils.data_utils import Param
-from clarifai.runners.utils.data_types import Image, Text
+from clarifai.runners.utils.data_types import Image
+from clarifai.runners.models.model_builder import ModelBuilder
 
 from diffusers import FluxPipeline
 import torch
@@ -17,12 +17,16 @@ class TextToImageModel(ModelClass):
 
   def load_model(self):
     """Load the model here."""
-    self.device = "cuda" #if torch.cuda.is_available() else "cpu"
-    model_id = "black-forest-labs/FLUX.1-schnell"
-
+    # "black-forest-labs/FLUX.1-schnell"
+    
+    self.device = "cuda"
+    
+    model_path = os.path.dirname(os.path.dirname(__file__))
+    builder = ModelBuilder(model_path, download_validation_only=True)
+    checkpoints = builder.download_checkpoints(stage="runtime")
     # load model and scheduler
     self.pipeline = FluxPipeline.from_pretrained(
-      model_id,
+      checkpoints,
       torch_dtype=torch.bfloat16
     )
     
@@ -42,7 +46,7 @@ class TextToImageModel(ModelClass):
     seed: int = Param(default=None, description="Seed value to make generation deterministic."),
     # No need
     sigmas: List[float] = None,
-  ) -> List[Image]:
+  ) -> Image:
     
     image = self.pipeline(
         prompt=prompt,
@@ -127,6 +131,9 @@ class TextToImageModel(ModelClass):
   
 
   def test(self):
+    """ 
+    Test cases only executed when running `clarifai model test-locally`
+    """
     image = self.predict(
     prompt="A Ghibli animated orange cat, panicked about a deadline, sits in front of a Banana-brand laptop.", 
     negative_prompt="Ugly, cute", guidance_scale=7)
