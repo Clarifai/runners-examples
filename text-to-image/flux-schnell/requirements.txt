@@ -12,5 +12,5 @@ ninja
 aiohttp
 packaging
 torch==2.5.1
-clarifai==11.5.2
+clarifai
 clarifai-protocol>=0.0.23
