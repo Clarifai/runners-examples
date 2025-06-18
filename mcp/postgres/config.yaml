@@ -7,5 +7,5 @@ inference_compute_info:
 model:
   app_id: mcp-examples-app
   id: postgres-mcp-server
-  model_type_id: text-to-text
+  model_type_id: mcp
   user_id: mcp-examples-user
