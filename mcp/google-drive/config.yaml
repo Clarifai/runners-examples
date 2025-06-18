@@ -7,5 +7,5 @@ inference_compute_info:
 model:
   app_id: mcp-examples-app
   id: google-drive-mcp-server
-  model_type_id: mcp
+  model_type_id: text-to-text
   user_id: mcp-examples-user
