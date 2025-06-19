@@ -1,5 +1,5 @@
 clarifai
-anyio==4.9.0
+anyio
 mcp==1.9.0
 fastmcp==2.3.4
 google-api-python-client==2.111.0
