@@ -7,8 +7,8 @@ ninja
 
 timm
 openai
-clarifai==11.4.10
-clarifai-protocol>=0.0.23
+clarifai
+clarifai-protocol
 psutil
 
 torch==2.6.0
