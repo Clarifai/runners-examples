@@ -1,6 +1,7 @@
 from typing import List
 import os
 
+from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.openai_class import OpenAIModelClass
 from clarifai.runners.utils.data_types import Image
 
@@ -24,9 +25,14 @@ class StableDiffusion(OpenAIModelClass):
 
     def load_model(self):
         """Load the model here."""
-        os.environ["HF_TOKEN"] = "hf_token" # Replace with your Hugging Face token
-        self.client = StableDiffusionDepth2ImgPipeline.from_pretrained("stabilityai/stable-diffusion-2-depth",torch_dtype=torch.float16,
-                                                                       use_safetensors=True)
+        model_path = os.path.dirname(os.path.dirname(__file__))
+        builder = ModelBuilder(model_path, download_validation_only=True)
+        hf_token = builder.config["checkpoints"]["hf_token"]
+        
+        self.client = StableDiffusionDepth2ImgPipeline.from_pretrained("stabilityai/stable-diffusion-2-depth",
+                                                                       torch_dtype=torch.float16,
+                                                                       use_safetensors=True,
+                                                                       token=hf_token)
         self.client.to("cuda" if torch.cuda.is_available() else "cpu")
         logger.info("stable-diffusion model loaded successfully.")
     
