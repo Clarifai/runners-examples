@@ -1,5 +1,3 @@
-# Config file for the Sglang runner
-
 model:
   id: "SmolLM2-1_7B-Instruct"
   user_id: "USER_ID"
@@ -14,9 +12,4 @@ inference_compute_info:
   cpu_memory: "6Gi"
   num_accelerators: 1
   accelerator_type: ["NVIDIA-*"]
-  accelerator_memory: "44Gi"
-
-checkpoints:
-  type: "huggingface"
-  repo_id: "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-  hf_token: "hf_token"
+  accelerator_memory: "20Gi"
