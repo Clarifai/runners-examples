@@ -33,7 +33,7 @@ class MyModel(ModelClass):
         device_map=self.device,
         torch_dtype=torch.bfloat16,
     )
-    self.streamer = TextIteratorStreamer(tokenizer=self.tokenizer,)
+    self.streamer = TextIteratorStreamer(tokenizer=self.tokenizer, skip_prompt=True, skip_special_tokens=True)
     self.chat_template = None
     logger.info("Done loading!")
 
