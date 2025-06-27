@@ -13,4 +13,4 @@ aiohttp
 packaging
 torch==2.5.1
 clarifai
-clarifai-protocol>=0.0.23
+clarifai-protocol

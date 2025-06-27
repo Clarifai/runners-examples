@@ -8,5 +8,5 @@ einops==0.8.0
 requests==2.32.3
 numpy>2.0
 torch==2.5.1
-clarifai #11.5.0
+clarifai
 clarifai-protocol
