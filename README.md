@@ -1,3 +1,4 @@
+![image](https://github.com/user-attachments/assets/b22c9807-f5e7-49eb-b00d-598e400781af)
 # Clarifai Model Upload
 
 [Clarifai](https://www.clarifai.com/) provides an easy-to-use platform to serve AI/ML models in production.
