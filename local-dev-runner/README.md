@@ -54,7 +54,7 @@ clarifai config --help
  ```python
  os.environ['OLLAMA_HOST'] = '127.0.0.1:2333'
  ```
- 
+
 4. **Run the model using clarifai local-dev**:
 - Once you have made all the changes, run the below command to start an local-dev runner in your system. 
 - Refer to this [link](https://docs.clarifai.com/compute/models/upload/run-locally) for more information on how to use local-dev runners and it's use cases.
@@ -65,7 +65,11 @@ clarifai model local-dev /ollama-model-upload
 
 ## 💻 Usage Example
 The runner will be started in your local machine and now it will be ready for inference.
-
+### Set Clarifai PAT
+Refer this [guide](https://docs.clarifai.com/control/authentication/pat/#how-to-create-a-pat-on-the-platform) on how to obtain one from the platform.
+```python
+os.environ["CLARIFAI_PAT"] = "YOUR_CLARIFAI_PAT"
+```
 ### Predict
 `model_url` can be taken from your account, where the model instance is created. 
 
