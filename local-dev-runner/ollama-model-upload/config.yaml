@@ -1,0 +1,5 @@
+model:
+  app_id: local-dev-runner-app
+  id: local-ollama-model
+  model_type_id: text-to-text
+  user_id: clarifai-user-id
