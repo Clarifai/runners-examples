@@ -87,7 +87,6 @@ class OllamaModelClass(OpenAIModelClass):
                 self._set_usage(response)
 
                 d = response.model_dump()
-                print(d)
                 # wrap in choices.
                 return json.dumps(
                   {
@@ -150,7 +149,6 @@ class OllamaModelClass(OpenAIModelClass):
                 for chunk in response:
                     self._set_usage(chunk)
                     d = chunk.model_dump()
-                    print(d)
                     yield json.dumps({"choices": [{"message": d['message'], "finish_reason": d.get('done_reason', None)}]})
 
         except Exception as e:
