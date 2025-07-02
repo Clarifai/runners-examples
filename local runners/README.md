@@ -42,13 +42,18 @@ For further info run this in terminal
 clarifai config --help
 ```
 
-3. **Model name**:
+3. **Setting model name, context length and host**:
  - [Ollama](https://ollama.com/search) provides with wide variety of models which you can run in your local system. Be cautious on the model size when you run it locally. Always monitor the resource usage.
 
  - To set model name in the script and run any model. Change the model name in this script `ollama-model-upload/1/model.py` in the `load_model` method under `OllamaModelClass` .
 
  ```python
+ #Set model name
  self.model_name = "llama3.2-vision:latest"
+ ```
+ - You can modify the model context length by setting the below variable. Default it will be using 4096.
+ ```python
+ os.environ['OLLAMA_CONTEXT_LENGTH'] = '8192' #or 16000 etc.
  ```
  - Additionally you can also change the host and port for your ollama server to run by modifying the `"OLLAMA_HOST"` value in `run_ollama_server` function.
  ```python
@@ -65,12 +70,84 @@ clarifai model local-dev /ollama-model-upload
 
 ## 💻 Usage Example
 The runner will be started in your local machine and now it will be ready for inference.
+
+local runner models can be also inferenced using OpenAI compatible endpoint function.
 ### Set Clarifai PAT
 Refer this [guide](https://docs.clarifai.com/control/authentication/pat/#how-to-create-a-pat-on-the-platform) on how to obtain one from the platform.
 ```python
 os.environ["CLARIFAI_PAT"] = "YOUR_CLARIFAI_PAT"
 ```
-### Predict
+### Inference using OpenAI compatible method
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.clarifai.com/v2/ext/openai/v1",
+    api_key=os.environ['CLARIFAI_PAT'],  
+)
+# Replace with your user-id
+response = client.chat.completions.create(
+    model="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model",
+    messages=[
+        {"role": "system", "content": "Talk like a pirate."},
+        {
+            "role": "user",
+            "content": "How do I check if a Python object is an instance of a class?",
+        },
+    ],
+    temperature=0.7,
+    stream=False, # stream=True also works, just iterator over the response
+)
+print(response)
+
+# For printing stream response.
+#for chunk in response:
+    #print(chunk.choices[0].message['content'], end='')
+```
+### Multimodal inference using OpenAI compatible method for ollama models
+
+Since ollama handles images in different way, we can directly pass the bytes representation of image in the message dictionary.
+```python
+from pathlib import Path
+import base64
+
+# local path to image
+#path = "local/path/of/image.png"
+#image_base64 = base64.b64encode(Path(path).read_bytes()).decode()
+
+# Or download image from URL and pass it as bytes 
+def get_image_base64(image_url):
+    """Download image and convert to base64."""
+    response = requests.get(image_url)
+    return base64.b64encode(response.content).decode('utf-8')
+
+image_url = "https://samples.clarifai.com/cat1.jpeg"
+image_base64 = get_image_base64(image_url)
+
+client = OpenAI(
+    base_url="https://api.clarifai.com/v2/ext/openai/v1",
+    api_key=os.environ['CLARIFAI_PAT'],  
+)
+
+# Replace with your user-id
+response = client.chat.completions.create(
+            model="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model",
+            messages=[
+                {
+                    "role": "user",
+                    'content': 'what is in this image?',
+                    'images': [image_base64],
+                }
+            ],
+            temperature=0.7,
+            max_tokens=1024
+        )
+        
+print(f"Response: {response.choices[0].message.content}")
+
+```
+### Inference with Clarifai SDK Predict
 `model_url` can be taken from your account, where the model instance is created. 
 
 Model URL will follow below format - `https://clarifai.com/user-id/app-id/models/model-id` .
@@ -92,7 +169,7 @@ response = model.predict(messages)
 print(response)
 ```
 
-### Generate
+### Inference with Clarifai SDK Generate
 ```python
 from clarifai.client.model import Model
 
@@ -109,7 +186,7 @@ for chunk in response:
     print(chunk, end='')
 ```
 
-### Multimodal inference
+### Multimodal inference with Clarifai SDK
 
 ```python
 from pathlib import Path
