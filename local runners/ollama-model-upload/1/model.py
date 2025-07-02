@@ -14,11 +14,11 @@ def run_ollama_server(model_name: str = 'llama3.2'):
     from clarifai.runners.utils.model_utils import execute_shell_command, terminate_process
 
     os.environ['OLLAMA_HOST'] = '127.0.0.1:2333'
-    os.environ['OLLAMA_CONTEXT_LENGTH'] = '131072'
-    cmd = f"ollama serve"
+    os.environ['OLLAMA_CONTEXT_LENGTH'] = '8192'
+
     try:
-        logger.info(f"Starting Ollama server with command: {cmd}")
-        start_process = execute_shell_command(cmd)
+        logger.info(f"Starting Ollama server in the host: {os.environ['OLLAMA_HOST']}")
+        start_process = execute_shell_command("ollama serve")
         if start_process:
             pull_model=execute_shell_command(f"ollama pull {model_name}")
             logger.info(f"Model {model_name} pulled successfully.")
@@ -41,7 +41,7 @@ class OllamaModelClass(OpenAIModelClass):
         Load the Ollama model.
         """
         #set the model name here
-        # self.model_name = 'llama3.2-vision:latest'
+        #self.model_name = 'llama3.2-vision:latest'
         self.model_name = 'devstral:latest'
 
         #start ollama server
@@ -120,6 +120,7 @@ class OllamaModelClass(OpenAIModelClass):
         """
         try:
             request_data = json.loads(msg)
+            logger.info(f"Received request data: {request_data}")
             endpoint = request_data.pop("openai_endpoint", self.DEFAULT_ENDPOINT)
             if endpoint not in [self.ENDPOINT_CHAT_COMPLETIONS, self.ENDPOINT_RESPONSES]:
                 raise ValueError("Streaming is only supported for chat completions and responses.")
@@ -127,13 +128,7 @@ class OllamaModelClass(OpenAIModelClass):
 
             if endpoint == self.ENDPOINT_RESPONSES:
                 raise Exception("responses format not supported yet")
-                # Handle responses endpoint
-                stream_response = self._route_request(endpoint, request_data)
-                for chunk in stream_response:
-                    yield json.dumps(chunk.model_dump())
             else:
-
-
                 options = {
                     "temperature": request_data.get('temperature', 0.7),
                     "top_p": request_data.get('top_p', 1.0),
