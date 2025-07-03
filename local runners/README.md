@@ -23,6 +23,8 @@ ollama-model-upload/
 ---
 - [Ollama](https://ollama.com/download) should be installed and running in your local device.
 
+> **Note for Windows users:** After installing Ollama, you need to restart your machine to ensure the updated environment variables take effect.
+
 ## 🚀 Running model locally
 
 1. **Install [Clarifai](https://github.com/Clarifai/clarifai-python)** : 
