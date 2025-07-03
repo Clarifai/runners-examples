@@ -15,6 +15,12 @@ if not os.environ.get('OLLAMA_HOST'):
   os.environ["OLLAMA_HOST"] = '127.0.0.1:23333'
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST')
 
+if not os.environ.get('OLLAMA_CONTEXT_LENGTH'):
+    # Set default context length if not set
+    os.environ["OLLAMA_CONTEXT_LENGTH"] = '8192'  # Default context length for Llama 3.2
+OLLAMA_CONTEXT_LENGTH = os.environ.get('OLLAMA_CONTEXT_LENGTH')
+    
+
 
 def run_ollama_server(model_name: str = 'llama3.2'):
     """
@@ -37,6 +43,11 @@ def run_ollama_server(model_name: str = 'llama3.2'):
             terminate_process(start_process)
         raise RuntimeError(f"Failed to start Ollama server: {e}")     
 
+# Check if Image has content before building messages
+def has_image_content(image: Image) -> bool:
+    """Check if Image object has either bytes or URL."""
+    return bool(getattr(image, 'url', None) or getattr(image, 'bytes', None))
+
 
 class OllamaModelClass(OpenAIModelClass):
 
@@ -48,7 +59,7 @@ class OllamaModelClass(OpenAIModelClass):
         Load the Ollama model.
         """
         #set the model name here or via OLLAMA_MODEL_NAME
-        self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3-groq-tool-use:latest')#'devstral:latest')
+        self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3.2')#'devstral:latest')
         
         #start ollama server
         run_ollama_server(model_name=self.model)
@@ -56,9 +67,9 @@ class OllamaModelClass(OpenAIModelClass):
         self.client = OpenAI(
                 api_key="notset",
                 base_url= f"http://{OLLAMA_HOST}/v1")
-
-        logger.info(f"Ollama model loaded successfully: {self.model}")
         
+        logger.info(f"Ollama model loaded successfully: {self.model}")
+    
   
     @OpenAIModelClass.method
     def predict(self,
@@ -75,11 +86,12 @@ class OllamaModelClass(OpenAIModelClass):
       """
       This method is used to predict the response for the given prompt and chat history using the model and tools.
       """
-
       if tools is not None and tool_choice is None:
           tool_choice = "auto"
-              
-      messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
+      
+      img_content = image if has_image_content(image) else None
+      
+      messages = build_openai_messages(prompt=prompt, image=img_content, images=images, messages=chat_history)
       response = self.client.chat.completions.create(
           model=self.model,
           messages=messages,
@@ -113,7 +125,12 @@ class OllamaModelClass(OpenAIModelClass):
       """
       This method is used to stream generated text tokens from a prompt + optional chat history and tools.
       """
-      messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
+      if tools is not None and tool_choice is None:
+          tool_choice = "auto"
+      
+      img_content = image if has_image_content(image) else None
+
+      messages = build_openai_messages(prompt=prompt, image=img_content, images=images, messages=chat_history)
       response = self.client.chat.completions.create(
           model=self.model,
           messages=messages,
