@@ -47,12 +47,29 @@ clarifai config --help
 3. **Setting model name, context length and host**:
  - [Ollama](https://ollama.com/search) provides with wide variety of models which you can run in your local system. Be cautious on the model size when you run it locally. Always monitor the resource usage.
 
- - To set model name in the script and run any model. Change the model name in this script `ollama-model-upload/1/model.py` in the `load_model` method under `OllamaModelClass` .
+ - You can set the Model name, context size and host address directly in your terminal initially.
+ ```bash
+ export OLLAMA_HOST=127.0.0.1:23333
+ export OLLAMA_CONTEXT_LENGTH=8192
+ export OLLAMA_MODEL_NAME=llama3.2
+ ```
+
+ or 
+
+ - Set model name in the model script to run any model. Change the model name in the script `ollama-model-upload/1/model.py` inside the `load_model` method under `OllamaModelClass` .
 
  ```python
  #Set model name
- self.model_name = "llama3.2-vision:latest"
+ self.model = os.environ.get("OLLAMA_MODEL_NAME",'llama3.2-vision:latest')
  ```
+Quickstart tips on ollama models and use cases
+
+**Multimodal** - `llama3.2-vision:latest`
+**Tool calling** - `llama3-groq-tool-use:latest`
+**Coding agent** - `devstral:latest`
+
+
+ 
  - You can modify the model context length by setting the below variable. Default it will be using 4096.
  ```python
  os.environ['OLLAMA_CONTEXT_LENGTH'] = '8192' #or 16000 etc.
@@ -109,7 +126,6 @@ print(response)
 ```
 ### Multimodal inference using OpenAI compatible method for ollama models
 
-Since ollama handles images in different way, we can directly pass the bytes representation of image in the message dictionary.
 ```python
 from pathlib import Path
 import base64
@@ -134,18 +150,25 @@ client = OpenAI(
 
 # Replace with your user-id
 response = client.chat.completions.create(
-            model="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model",
-            messages=[
-                {
-                    "role": "user",
-                    'content': 'what is in this image?',
-                    'images': [image_base64],
-                }
-            ],
-            temperature=0.7,
-            max_tokens=1024
-        )
-        
+                model="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model-2",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": example["prompt"]},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                temperature=0.7,
+                max_tokens=1024,
+                stream=True,
+            )
 print(f"Response: {response.choices[0].message.content}")
 
 ```
@@ -157,18 +180,14 @@ Model URL will follow below format - `https://clarifai.com/user-id/app-id/models
 You can also get the `app-id` ,`user-id` ,`model-id` from `ollama-model-upload/config.yaml` .
 
 ```python
-from clarifai.client.model import Model
+from clarifai.client import Model
 
-# Initialize model
-model_url="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model"
+model = Model(url="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model-2")
 
-model = Model(url=model_url)
+prompt = "Hello, Good morning!"
+result = model.predict(prompt)
 
-# Generate text
-messages = [{"role": "user", "content": "Why the sky is blue"}]
-response = model.predict(messages)
-
-print(response)
+print("Predict response:", result)
 ```
 
 ### Inference with Clarifai SDK Generate
@@ -177,12 +196,11 @@ from clarifai.client.model import Model
 
 # Initialize model
 model_url="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model"
-
 model = Model(url=model_url)
 
 # Generate text
-messages = [{"role": "user", "content": "Why the sky is blue"}]
-response = model.generate(messages, options={'temperature':0.7})
+prompt = "Hello, Good morning!"
+result = model.generate(prompt)
 
 for chunk in response:
     print(chunk, end='')
@@ -191,34 +209,27 @@ for chunk in response:
 ### Multimodal inference with Clarifai SDK
 
 ```python
-from pathlib import Path
-import base64
 from clarifai.client.model import Model
+from clarifai.runners.utils.data_types import Image
+
+image_url = "https://samples.clarifai.com/metro-north.jpg"
+image_obj = Image(url=image_url)
 
 # Initialize model
 model_url="https://clarifai.com/user-id/local-dev-runner-app/models/local-dev-model"
 
 model = Model(url=model_url)
 
-#path to the image
-path = "local/path/of/image.png"
-
-#Convert image into base64 str
-img = base64.b64encode(Path(path).read_bytes()).decode()
-
-message=[
-    {
-      'role': 'user',
-      'content': 'what is in this image?',
-      'images': [img],
-    }
-  ]
-
 #Predict
 #response = model.predict(messages=message)
 
 #Generate
-response = model.generate(messages=message)
+result = model.predict(
+    prompt="Describe this image.",
+    image=image_obj,
+    max_tokens=1024,
+    temperature=0.5,
+)
 
 for chunk in response:
     print(chunk, end='')
@@ -239,4 +250,3 @@ For more references on how to call the ollama model, refer to this [example](htt
  - [Clarifai Docs](https://docs.clarifai.com/compute/models/upload/run-locally/#use-cases-for-local-dev-runners)
  - [Ollama-python](https://github.com/ollama/ollama-python)
  - [Ollama](https://ollama.com/)
-

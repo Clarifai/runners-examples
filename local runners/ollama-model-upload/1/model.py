@@ -5,6 +5,7 @@ import json
 from clarifai.runners.models.openai_class import OpenAIModelClass
 from clarifai.utils.logging import logger
 from clarifai.runners.utils.data_utils import Param
+from clarifai.runners.utils.data_types import Image
 from clarifai.runners.utils.openai_convertor import build_openai_messages
 
 from openai import OpenAI
@@ -47,21 +48,23 @@ class OllamaModelClass(OpenAIModelClass):
         Load the Ollama model.
         """
         #set the model name here or via OLLAMA_MODEL_NAME
-        self.model_name = os.environ.get("OLLAMA_MODEL_NAME", 'granite3.3:2b')#'devstral:latest')
+        self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3-groq-tool-use:latest')#'devstral:latest')
         
         #start ollama server
-        run_ollama_server(model_name=self.model_name)
+        run_ollama_server(model_name=self.model)
 
         self.client = OpenAI(
                 api_key="notset",
                 base_url= f"http://{OLLAMA_HOST}/v1")
-        self.model = self.client.models.list().data[0].id
+
         logger.info(f"Ollama model loaded successfully: {self.model}")
         
   
     @OpenAIModelClass.method
     def predict(self,
                 prompt: str,
+                image: Image = None,
+                images: List[Image] = None,
                 chat_history: List[dict] = None,
                 tools: List[dict] = None,
                 tool_choice: str = None,
@@ -76,7 +79,7 @@ class OllamaModelClass(OpenAIModelClass):
       if tools is not None and tool_choice is None:
           tool_choice = "auto"
               
-      messages = build_openai_messages(prompt=prompt, messages=chat_history)
+      messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
       response = self.client.chat.completions.create(
           model=self.model,
           messages=messages,
@@ -99,6 +102,8 @@ class OllamaModelClass(OpenAIModelClass):
     @OpenAIModelClass.method
     def generate(self,
                 prompt: str,
+                image: Image = None,
+                images: List[Image] = None,
                 chat_history: List[dict] = None,
                 tools: List[dict] = None,
                 tool_choice: str = None,
@@ -108,7 +113,7 @@ class OllamaModelClass(OpenAIModelClass):
       """
       This method is used to stream generated text tokens from a prompt + optional chat history and tools.
       """
-      messages = build_openai_messages(prompt=prompt, messages=chat_history)
+      messages = build_openai_messages(prompt=prompt, image=image, images=images, messages=chat_history)
       response = self.client.chat.completions.create(
           model=self.model,
           messages=messages,
