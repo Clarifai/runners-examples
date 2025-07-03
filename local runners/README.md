@@ -155,7 +155,7 @@ response = client.chat.completions.create(
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": example["prompt"]},
+                            {"type": "text", "text": "Describe the image"},
                             {
                                 "type": "image_url",
                                 "image_url": {
