@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.13-labs
-FROM --platform=$TARGETPLATFORM public.ecr.aws/clarifai-models/amd-vllm:2.8.0.dev20250514-py3.12-rocm6.4-48627221fde5e75f31bb78e19e58432f7a68e94d as final
+FROM --platform=$TARGETPLATFORM public.ecr.aws/clarifai-models/amd-vllm:2.8.0.dev20250514-py3.12-rocm6.4-81e942130173f54927e7c9a65aabc7e32780616d as final
 
 COPY --link requirements.txt /home/nonroot/requirements.txt
 
