@@ -88,7 +88,7 @@ Quickstart tips on ollama models and use cases
 - Refer to this [link](https://docs.clarifai.com/compute/models/upload/run-locally) for more information on how to use local-dev runners and it's use cases.
 - Model path should point to the model files. 
 ```bash
-clarifai model local-dev /ollama-model-upload
+clarifai model local-runner /ollama-model-upload
 ```
 
 ## 💻 Usage Example
