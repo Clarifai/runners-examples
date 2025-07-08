@@ -22,26 +22,16 @@ Before setting up this repository, ensure you have:
 
 The Clarifai CLI provides several commands for local model development:
 
-#### 1. Install the Clarifai Python SDK
+#### 1. Install the Model Dependencies
 
 Install the latest version of the Clarifai Python SDK:
 
 ```bash
-pip install clarifai
-```
-
-#### 2. Set Up Authentication
-
-1. Go to Clarifai Security Settings
-2. Create a new Personal Access Token (PAT)
-3. Set it as an environment variable and Login to Clarifai CLI
-
-```bash
-export CLARIFAI_PAT="your_personal_access_token_here"
+pip install -r <codebase-path>/requirements.txt
 ```
 
 
-#### 3. Login to Clarifai CLI
+#### 2. Login to Clarifai CLI
 
 ```bash
 clarifai login
@@ -50,7 +40,7 @@ clarifai login
 Fill the details requested during login
 
 
-#### 4. Setup the Model Codebase
+#### 3. Setup the Model Codebase
 
 To start developing a model from scratch:
 
@@ -67,7 +57,7 @@ clarifai model init <codebase-path> --github-repo <user>/<repo> --github-pat <gi
 This sets up your codebase to develop.
 
 
-#### 5. Start your Local Runner
+#### 4. Start your Local Runner
 
 Now, you can start your local runner:
 
@@ -81,6 +71,13 @@ This connects your local model to the Clarifai platform for testing while keepin
 
 ### Test your Local Runner
 
+#### Set Clarifai PAT
+Refer this [guide](https://docs.clarifai.com/control/authentication/pat/#how-to-create-a-pat-on-the-platform) on how to obtain one from the platform.
+```python
+os.environ["CLARIFAI_PAT"] = "YOUR_CLARIFAI_PAT"
+```
+
+#### Inference using SDK
 Once your runner is started, you can test it with a simple prediction:
 
 ```bash
