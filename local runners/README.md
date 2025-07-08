@@ -31,6 +31,10 @@ ollama-model-upload/
 ```bash
 pip install clarifai #>=11.5.5
 ```
+Install [OpenAI](https://github.com/openai/openai-python) - This enables us to call the model in openAI compatible way.
+```bash
+pip install openai
+```
 
 2. **Configure context in clarifai config**:
 - Login to clarifai.
