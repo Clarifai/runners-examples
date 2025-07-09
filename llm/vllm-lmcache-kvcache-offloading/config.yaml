@@ -1,7 +1,7 @@
 model:
   id: "vllm-lmcache-kvcache-offloading-llama-3_2-1b"
-  user_id: "luv_2261"
-  app_id: "test-upload"
+  user_id: "user_id"
+  app_id: "app_id"
   model_type_id: "text-to-text"
 
 build_info:
