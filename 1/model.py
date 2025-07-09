@@ -12,12 +12,12 @@ from openai import OpenAI
 
 # Set default host
 if not os.environ.get('OLLAMA_HOST'):
-  os.environ["OLLAMA_HOST"] = '127.0.0.1:23333'
+  os.environ["OLLAMA_HOST"] = '127.0.0.1:23333' # Change host name if you want to run of different host.
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST')
 
 if not os.environ.get('OLLAMA_CONTEXT_LENGTH'):
     # Set default context length if not set
-    os.environ["OLLAMA_CONTEXT_LENGTH"] = '8192'  # Default context length for Llama 3.2
+    os.environ["OLLAMA_CONTEXT_LENGTH"] = '8192'  # Default context length for Llama 3.2, You can change this for larger context.
 OLLAMA_CONTEXT_LENGTH = os.environ.get('OLLAMA_CONTEXT_LENGTH')
     
 
@@ -28,7 +28,6 @@ def run_ollama_server(model_name: str = 'llama3.2'):
     """
     from clarifai.runners.utils.model_utils import execute_shell_command, terminate_process
     
-
     try:
         logger.info(f"Starting Ollama server in the host: {OLLAMA_HOST}")
         start_process = execute_shell_command("ollama serve")
@@ -59,7 +58,7 @@ class OllamaModelClass(OpenAIModelClass):
         Load the Ollama model.
         """
         #set the model name here or via OLLAMA_MODEL_NAME
-        self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3.2')#'devstral:latest')
+        self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3.2') #You can change any model name here which is supported by ollama.
         
         #start ollama server
         run_ollama_server(model_name=self.model)
