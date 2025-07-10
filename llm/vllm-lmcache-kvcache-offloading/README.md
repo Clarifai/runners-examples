@@ -22,13 +22,22 @@ In particular it uses `LMCache's KV Cache Offloading` that  moves the Key-Value 
 pip install clarifai
 ```
 
-### 2\. Set your Clarifai Personal Access Token (PAT)
-
-Retrieve your PAT from your Clarifai account security settings.
+### 2\. Run the `clarifai login` command to login to the Clarifai platform 
 
 ```bash
-export CLARIFAI_PAT="your_personal_access_token"
+clarifai login
 ```
+After running the login command, you'll be prompted to enter the following details to authenticate your connection:
+
+```
+context name (default: "default"):
+user id:
+personal access token value (default: "ENVVAR" to get our env var rather than config):
+```
+* **Context name** — You can provide a custom name for your Clarifai configuration context, or simply press Enter to use the default name, "default". This helps you manage different configurations if needed.
+* **User ID** — Enter your Clarifai user ID.
+* **PAT** — Enter your Clarifai [PAT](https://docs.clarifai.com/compute/models/upload/local-runners#get-a-pat-key).
+Retrieve your PAT from your Clarifai account [security settings](https://clarifai.com/settings/security).
 
 ---
 
@@ -76,7 +85,7 @@ This command will:
 
 ## OpenAI-Compatible API Usage
 
-Llama-3_1-8B-instruct is accessible via the OpenAI-compatible API endpoint. You can utilize the OpenAI Python package as follows:
+This Model is accessible via the OpenAI-compatible API endpoint. You can utilize the OpenAI Python package as follows:
 
 ```python
 from openai import OpenAI
@@ -96,50 +105,6 @@ response = client.chat.completions.create(
     temperature=0.7,
     stream=True,
 )
-```
-## Tool Calling Example
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key=os.environ["CLARIFAI_PAT"],  # Your Clarifai PAT
-    base_url="https://api.clarifai.com/v2/ext/openai/v1"  # Clarifai's OpenAI-compatible API endpoint
-)
-
-
-tools = [{
-    "type": "function",
-    "function": {
-        "name": "get_weather",
-        "description": "Get current temperature for a given location.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "City and country e.g. Bogotá, Colombia"
-                }
-            },
-            "required": [
-                "location"
-            ],
-            "additionalProperties": False
-        },
-        "strict": True
-    }
-}]
-
-completion = client.chat.completions.create(
-    model="https://clarifai.com/{user_id}/{appid}/models/{model_id}",  # Clarifai model URL
-    messages=[{"role": "user", "content": "What is the weather like in Paris today?"}],
-    tools=tools,
-    temperature=0.7
-)
-
-print(completion.choices[0].message.tool_calls)
-
-```
 
 ---
 
