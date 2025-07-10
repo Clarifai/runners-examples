@@ -5,7 +5,7 @@ This folder contains examples that demonstrate how to create and set up Clarifai
 ## Prerequisites
 
 Before setting up this repository, ensure you have:
-- Python 3.11+ installed
+- Python 3.10+ installed
 - pip package manager
 - Git
 - A Clarifai account
