@@ -204,7 +204,7 @@ model = Model(url=model_url)
 
 # Generate text
 prompt = "Hello, Good morning!"
-result = model.generate(prompt)
+response = model.generate(prompt)
 
 for chunk in response:
     print(chunk, end='')
@@ -228,7 +228,7 @@ model = Model(url=model_url)
 #response = model.predict(messages=message)
 
 #Generate
-result = model.predict(
+response = model.predict(
     prompt="Describe this image.",
     image=image_obj,
     max_tokens=1024,
