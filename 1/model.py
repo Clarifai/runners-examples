@@ -12,12 +12,14 @@ from openai import OpenAI
 
 # Set default host
 if not os.environ.get('OLLAMA_HOST'):
-  os.environ["OLLAMA_HOST"] = '127.0.0.1:23333' # Change host name if you want to run of different host.
+  PORT = '23333'  # Default port for Ollama server
+  os.environ["OLLAMA_HOST"] = f'127.0.0.1:{PORT}' # Change host name if you want to run of different host.
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST')
 
 if not os.environ.get('OLLAMA_CONTEXT_LENGTH'):
     # Set default context length if not set
-    os.environ["OLLAMA_CONTEXT_LENGTH"] = '8192'  # Default context length for Llama 3.2, You can change this for larger context.
+    context_length = '8192'
+    os.environ["OLLAMA_CONTEXT_LENGTH"] = context_length  # Default context length for Llama 3.2, You can change this for larger context.
 OLLAMA_CONTEXT_LENGTH = os.environ.get('OLLAMA_CONTEXT_LENGTH')
     
 
