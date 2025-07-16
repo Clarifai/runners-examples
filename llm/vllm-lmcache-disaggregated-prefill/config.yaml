@@ -1,0 +1,20 @@
+model:
+  id: "vllm-lmcache-disaggregated-llama-3_1-8b"
+  user_id: "luv_2261"
+  app_id: "test-upload"
+  model_type_id: "text-to-text"
+
+build_info:
+  python_version: '3.12'
+
+inference_compute_info:
+  cpu_limit: '3'
+  cpu_memory: 15Gi
+  num_accelerators: 4
+  accelerator_type: ["NVIDIA-*"]
+  accelerator_memory: 44Gi
+
+checkpoints:
+  type: "huggingface"
+  repo_id: "unsloth/Llama-3.1-8B-Instruct"
+  when: "runtime"
