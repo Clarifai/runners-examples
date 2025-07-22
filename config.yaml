@@ -11,3 +11,6 @@ inference_compute_info:
   cpu_limit: '3'
   cpu_memory: 14Gi
   num_accelerators: 0
+
+toolkit:
+  provider: ollama 
