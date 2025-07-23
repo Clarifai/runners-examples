@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Iterator
 import os
 import json
-
+import subprocess
 from clarifai.runners.models.openai_class import OpenAIModelClass
 from clarifai.utils.logging import logger
 from clarifai.runners.utils.data_utils import Param
@@ -22,7 +22,11 @@ if not os.environ.get('OLLAMA_CONTEXT_LENGTH'):
     os.environ["OLLAMA_CONTEXT_LENGTH"] = context_length  # Default context length for Llama 3.2, You can change this for larger context.
 OLLAMA_CONTEXT_LENGTH = os.environ.get('OLLAMA_CONTEXT_LENGTH')
     
+if not os.environ.get('VERBOSE_OLLAMA'):
+    # Set default verbose logging to False if not set
+    os.environ["VERBOSE_OLLAMA"] = 'False'  # Change to 'True' for verbose logging
 
+VERBOSE_OLLAMA = os.environ.get('VERBOSE_OLLAMA', 'False').lower() == 'true'
 
 def run_ollama_server(model_name: str = 'llama3.2'):
     """
