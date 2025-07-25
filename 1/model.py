@@ -21,12 +21,8 @@ if not os.environ.get('OLLAMA_CONTEXT_LENGTH'):
     context_length = '8192'
     os.environ["OLLAMA_CONTEXT_LENGTH"] = context_length  # Default context length for Llama 3.2, You can change this for larger context.
 OLLAMA_CONTEXT_LENGTH = os.environ.get('OLLAMA_CONTEXT_LENGTH')
-    
-if not os.environ.get('VERBOSE_OLLAMA'):
-    # Set default verbose logging to False if not set
-    os.environ["VERBOSE_OLLAMA"] = 'False'  # Change to 'True' for verbose logging
 
-VERBOSE_OLLAMA = os.environ.get('VERBOSE_OLLAMA', 'False').lower() == 'true'
+VERBOSE_OLLAMA = False
 
 def run_ollama_server(model_name: str = 'llama3.2'):
     """
@@ -36,9 +32,13 @@ def run_ollama_server(model_name: str = 'llama3.2'):
     
     try:
         logger.info(f"Starting Ollama server in the host: {OLLAMA_HOST}")
-        start_process = execute_shell_command("ollama serve")
+        start_process = execute_shell_command("ollama serve",
+                                                  stdout=None if VERBOSE_OLLAMA else subprocess.DEVNULL,
+                                                  stderr=subprocess.STDOUT if VERBOSE_OLLAMA else subprocess.DEVNULL)
         if start_process:
-            pull_model=execute_shell_command(f"ollama pull {model_name}")
+            pull_model=execute_shell_command(f"ollama pull {model_name}",
+                                             stdout=None if VERBOSE_OLLAMA else subprocess.DEVNULL,
+                                             stderr=subprocess.STDOUT if VERBOSE_OLLAMA else subprocess.DEVNULL)
             logger.info(f"Model {model_name} pulled successfully.")
             logger.info(f"Ollama server started successfully on {OLLAMA_HOST}")
 
