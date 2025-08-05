@@ -1,10 +1,10 @@
 ![image](https://github.com/user-attachments/assets/b22c9807-f5e7-49eb-b00d-598e400781af)
 
-# Running Ollama models using Clarifai local-runner 
+# Running Ollama models using Clarifai local-runner
 
 A Python integration for running Large Language Models with Ollama in your local device (mac) and inference from anywhere using clarifai's local-runner functionality.
 
-This Model integration is specifically run and tested on mac. 
+This Model integration is specifically run and tested on mac.
 
 ## 🔍 Prerequisites
 ---
@@ -14,9 +14,9 @@ This Model integration is specifically run and tested on mac.
 
 ## 🚀 Running model locally
 
-1. **Install [Clarifai](https://github.com/Clarifai/clarifai-python)** : 
+1. **Install [Clarifai](https://github.com/Clarifai/clarifai-python)** :
 ```bash
-pip install clarifai #>=11.5.5
+pip install clarifai #>=11.6.7
 ```
 Install [OpenAI](https://github.com/openai/openai-python) (optional) - This enables us to call the model in openAI compatible way.
 ```bash
@@ -37,6 +37,7 @@ clarifai config --help
 
 Quickstart tips on ollama models and use cases
 
+**General** - `gpt-oss:20b`
 **Multimodal** - `llama3.2-vision:latest`
 **Tool calling** - `llama3-groq-tool-use:latest`
 **Coding agent** - `devstral:latest`
@@ -50,22 +51,22 @@ Run any ollama model in your local machine using local-runner with just 2 lines 
    ```bash
    clarifai model init --toolkit ollama
    ```
-   
+
    Options
-   
+
    You can call any model from [Ollama library](https://ollama.com/library) with following options
-   
+
    `--model-name` - **Name of your ollama model (defaults to llama3.2)**
-   
+
    `--port` - **Port where the model is running (defaults to 23333)**
-   
+
    `--context-length` - **Set the context-length for model (defaults to 8192)**
 
    For example: serving a gemma3n model with context of 16k at port 8008
    ```bash
    clarifai model init --toolkit --ollama --port 8008 --context-length 16000
    ```
-   
+
 3. **Load and run the model locally**
    ```bash
    clarifai model local-runner .
@@ -87,7 +88,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="https://api.clarifai.com/v2/ext/openai/v1",
-    api_key=os.environ['CLARIFAI_PAT'],  
+    api_key=os.environ['CLARIFAI_PAT'],
 )
 # Replace with your user-id
 response = client.chat.completions.create(
@@ -118,7 +119,7 @@ import base64
 #path = "local/path/of/image.png"
 #image_base64 = base64.b64encode(Path(path).read_bytes()).decode()
 
-# Or download image from URL and pass it as bytes 
+# Or download image from URL and pass it as bytes
 def get_image_base64(image_url):
     """Download image and convert to base64."""
     response = requests.get(image_url)
@@ -129,7 +130,7 @@ image_base64 = get_image_base64(image_url)
 
 client = OpenAI(
     base_url="https://api.clarifai.com/v2/ext/openai/v1",
-    api_key=os.environ['CLARIFAI_PAT'],  
+    api_key=os.environ['CLARIFAI_PAT'],
 )
 
 # Replace with your user-id
@@ -157,7 +158,7 @@ print(f"Response: {response.choices[0].message.content}")
 
 ```
 ### Inference with Clarifai SDK Predict
-`model_url` can be taken from your account, where the model instance is created. 
+`model_url` can be taken from your account, where the model instance is created.
 
 Model URL will follow below format - `https://clarifai.com/user-id/app-id/models/model-id` .
 
@@ -227,7 +228,7 @@ Below is the file structure of how the model file would look like once you have 
 ollama-model-upload/
    ├── 1/
    │   └── model.py          # Main model implementation
-   │    
+   │
    ├── config.yaml           # Model configuration
    └── requirements.txt      # Project dependencies
 

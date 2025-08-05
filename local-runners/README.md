@@ -47,6 +47,17 @@ clarifai model init <codebase-path> --github-repo <user>/<repo> --github-pat <gi
 
 This sets up your codebase to develop.
 
+##### Running locally with Ollama.
+For common toolkits like [Ollama](https://ollama.com/) we have some convenience args to use that
+toolkit with your favoriate models such a gpt-oss:20b for example:
+```bash
+clarifai model init --toolkit ollama --model-name gpt-oss:20b
+```
+
+See the [Ollama
+README](https://github.com/Clarifai/runners-examples/tree/main/local-runners/ollama-model-upload)
+for more information.
+
 
 #### 4. Start your Local Runner
 
@@ -80,8 +91,8 @@ model = Model("https://clarifai.com/<user-id>/local-dev-runner-app/models/local-
     base_url='https://api.clarifai.com',
  )
 
-    
-# Example model prediction from different model methods: 
+
+# Example model prediction from different model methods:
 
 response = model.predict(prompt="What is the future of AI?", number_of_letters=3)
 print(response)
