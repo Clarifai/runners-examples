@@ -105,6 +105,10 @@ class OllamaModelClass(OpenAIModelClass):
           max_completion_tokens=max_tokens,
           temperature=temperature,
           top_p=top_p)
+                  
+      if response.usage is not None:
+            self.set_output_context(prompt_tokens=response.usage.prompt_tokens, 
+                                    completion_tokens=response.usage.completion_tokens)
         
       if response.choices[0] and response.choices[0].message.tool_calls:
         # If the response contains tool calls, return as a string
@@ -136,28 +140,32 @@ class OllamaModelClass(OpenAIModelClass):
       img_content = image if has_image_content(image) else None
 
       messages = build_openai_messages(prompt=prompt, image=img_content, images=images, messages=chat_history)
-      response = self.client.chat.completions.create(
-          model=self.model,
-          messages=messages,
-          tools=tools,
-          tool_choice=tool_choice,
-          max_completion_tokens=max_tokens,
-          temperature=temperature,
-          top_p=top_p,
-          stream=True)
-      
-      for chunk in response:
-        if chunk.choices:
-          if chunk.choices[0].delta.tool_calls:
-            # If the response contains tool calls, return the first one as a string
-            tool_calls = chunk.choices[0].delta.tool_calls
-            tool_calls_json = [tc.to_dict() for tc in tool_calls]
-            # Convert to JSON string
-            json_string = json.dumps(tool_calls_json, indent=2)
-            # Yield the JSON string
-            yield json_string
-          else:
-            # Otherwise, return the content of the first choice
-            text = (chunk.choices[0].delta.content
-                    if (chunk and chunk.choices[0].delta.content) is not None else '')
-            yield text
+      for chunk in self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            max_completion_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stream=True,
+            stream_options={"include_usage": True}
+            ):
+            if hasattr(chunk, 'usage') and chunk.usage is not None:
+                if hasattr(chunk.usage, 'prompt_tokens') and hasattr(chunk.usage, 'completion_tokens'):
+                    self.set_output_context(prompt_tokens=chunk.usage.prompt_tokens, completion_tokens=chunk.usage.completion_tokens)
+            if chunk.choices:
+                if chunk.choices[0].delta.tool_calls:
+                # If the response contains tool calls, return the first one as a string
+                    import json
+                    tool_calls = chunk.choices[0].delta.tool_calls
+                    tool_calls_json = [tc.to_dict() for tc in tool_calls]
+                    # Convert to JSON string
+                    json_string = json.dumps(tool_calls_json, indent=2)
+                    # Yield the JSON string
+                    yield json_string
+                else:
+                    # Otherwise, return the content of the first choice
+                    text = (chunk.choices[0].delta.content
+                            if (chunk and chunk.choices[0].delta.content) is not None else '')
+                    yield text
