@@ -8,7 +8,7 @@ from clarifai.runners.models.openai_class import OpenAIModelClass
 from openai import OpenAI
 from clarifai.runners.utils.openai_convertor import build_openai_messages
 from clarifai.runners.utils.data_utils import Param
-from clarifai.utils.logger import logger
+from clarifai.utils.logging import logger
 
 PYTHON_EXEC = sys.executable
 
