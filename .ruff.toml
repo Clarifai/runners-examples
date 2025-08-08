@@ -56,11 +56,7 @@ ignore = [
 "proto/**.py" = ["F401","E712","F403","I001"]
 "*_pb2*.py" = ["F401","E712","F821","E501","I001"]
 "*.ipynb" = ["F401","F821","I001"]
-# we do lots of type checking in here
-"utils/argspec.py" = ["E721"]
-# wildcard imports
-"conf/segmentation/test.py" = ["F403","F405"]
-"conf/tf_striate/slim/__init__.py" = ["F403"]
+
 
 [format]
 # just keep what we have so it's less of a change.
