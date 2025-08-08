@@ -29,7 +29,7 @@ def run_ollama_server(model_name: str = 'llama3.2'):
     start the Ollama server.
     """
     from clarifai.runners.utils.model_utils import execute_shell_command, terminate_process
-    
+
     try:
         logger.info(f"Starting Ollama server in the host: {OLLAMA_HOST}")
         start_process = execute_shell_command("ollama serve",
@@ -46,7 +46,7 @@ def run_ollama_server(model_name: str = 'llama3.2'):
         logger.error(f"Error starting Ollama server: {e}")
         if 'start_process' in locals():
             terminate_process(start_process)
-        raise RuntimeError(f"Failed to start Ollama server: {e}")     
+        raise RuntimeError(f"Failed to start Ollama server: {e}")
 
 # Check if Image has content before building messages
 def has_image_content(image: Image) -> bool:
@@ -65,17 +65,17 @@ class OllamaModelClass(OpenAIModelClass):
         """
         #set the model name here or via OLLAMA_MODEL_NAME
         self.model = os.environ.get("OLLAMA_MODEL_NAME", 'llama3.2') #You can change any model name here which is supported by ollama.
-        
+
         #start ollama server
         run_ollama_server(model_name=self.model)
 
         self.client = OpenAI(
                 api_key="notset",
                 base_url= f"http://{OLLAMA_HOST}/v1")
-        
+
         logger.info(f"Ollama model loaded successfully: {self.model}")
-    
-  
+
+
     @OpenAIModelClass.method
     def predict(self,
                 prompt: str,
@@ -86,16 +86,16 @@ class OllamaModelClass(OpenAIModelClass):
                 tool_choice: str = None,
                 max_tokens: int = Param(default=2048, description="The maximum number of tokens to generate. Shorter token lengths will provide faster performance.", ),
                 temperature: float = Param(default=0.7, description="A decimal number that determines the degree of randomness in the response", ),
-                top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass."), 
+                top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass."),
                 ) -> str:
       """
       This method is used to predict the response for the given prompt and chat history using the model and tools.
       """
       if tools is not None and tool_choice is None:
           tool_choice = "auto"
-      
+
       img_content = image if has_image_content(image) else None
-      
+
       messages = build_openai_messages(prompt=prompt, image=img_content, images=images, messages=chat_history)
       response = self.client.chat.completions.create(
           model=self.model,
@@ -105,11 +105,14 @@ class OllamaModelClass(OpenAIModelClass):
           max_completion_tokens=max_tokens,
           temperature=temperature,
           top_p=top_p)
-                  
+
       if response.usage is not None:
-            self.set_output_context(prompt_tokens=response.usage.prompt_tokens, 
+            self.set_output_context(prompt_tokens=response.usage.prompt_tokens,
                                     completion_tokens=response.usage.completion_tokens)
-        
+            if len(response.choices) == 0:
+                # still need to send the usage back.
+                return ""
+
       if response.choices[0] and response.choices[0].message.tool_calls:
         # If the response contains tool calls, return as a string
         tool_calls = response.choices[0].message.tool_calls
@@ -118,7 +121,7 @@ class OllamaModelClass(OpenAIModelClass):
       else:
         # Otherwise, return the content of the first choice
         return response.choices[0].message.content
-      
+
 
     @OpenAIModelClass.method
     def generate(self,
@@ -136,7 +139,7 @@ class OllamaModelClass(OpenAIModelClass):
       """
       if tools is not None and tool_choice is None:
           tool_choice = "auto"
-      
+
       img_content = image if has_image_content(image) else None
 
       messages = build_openai_messages(prompt=prompt, image=img_content, images=images, messages=chat_history)
@@ -151,9 +154,12 @@ class OllamaModelClass(OpenAIModelClass):
             stream=True,
             stream_options={"include_usage": True}
             ):
-            if hasattr(chunk, 'usage') and chunk.usage is not None:
-                if hasattr(chunk.usage, 'prompt_tokens') and hasattr(chunk.usage, 'completion_tokens'):
+            if chunk.usage is not None:
+                if chunk.usage.prompt_tokens or chunk.usage.completion_tokens:
                     self.set_output_context(prompt_tokens=chunk.usage.prompt_tokens, completion_tokens=chunk.usage.completion_tokens)
+                if len(chunk.choices) == 0: # still need to send the usage back.
+                    yield ""
+
             if chunk.choices:
                 if chunk.choices[0].delta.tool_calls:
                 # If the response contains tool calls, return the first one as a string
