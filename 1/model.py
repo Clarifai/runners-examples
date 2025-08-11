@@ -16,14 +16,20 @@ class MyModel(ModelClass):
 
   def load_model(self):
     """Load the model here."""
-    self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if torch.backends.mps.is_available():
+        self.device = 'mps'
+    elif torch.cuda.is_available():
+        self.device = 'cuda'
+    else:
+        self.device = 'cpu'
+
     logger.info(f"Running on device: {self.device}")
 
     # Load checkpoints
     model_path = os.path.dirname(os.path.dirname(__file__))
     builder = ModelBuilder(model_path, download_validation_only=True)
-    self.checkpoints = builder.download_checkpoints(stage="runtime")
-    
+    self.checkpoints = builder.config['checkpoints']['repo_id']
+    logger.info(f"Loading model from: {self.checkpoints}")
     # Load model and tokenizer
     self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoints,)
     self.tokenizer.pad_token = self.tokenizer.eos_token  # Set pad token to eos token
@@ -52,13 +58,12 @@ class MyModel(ModelClass):
     if prompt:
         messages.append({
             "role": "user",
-            "content": [{"type": "text", "text": prompt}]
+            "content":  prompt
         })
-
-    inputs = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to(self.model.device)
+    
+    inputs = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt", return_dict=True).to(self.model.device)
 
     generation_kwargs = {
-        "input_ids": inputs,
         "do_sample": True,
         "max_new_tokens": max_tokens,
         "temperature": temperature,
@@ -66,8 +71,8 @@ class MyModel(ModelClass):
         "eos_token_id": self.tokenizer.eos_token_id,
     }
 
-    output = self.model.generate(**generation_kwargs)
-    generated_tokens = output[0][inputs.shape[-1]:]
+    output = self.model.generate(**inputs, **generation_kwargs)
+    generated_tokens = output[0][inputs["input_ids"].shape[-1]:]
     return self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
   @ModelClass.method
@@ -84,10 +89,10 @@ class MyModel(ModelClass):
       messages = chat_history if chat_history else []
       if prompt:
           messages.append({
-              "role": "user",
-              "content": [{"type": "text", "text": prompt}]
-          })
-      
+            "role": "user",
+            "content":  prompt
+        })
+      logger.info(f"Generating response for messages: {messages}")
       response = self.chat(
           messages=messages,
           max_tokens=max_tokens,
@@ -98,8 +103,7 @@ class MyModel(ModelClass):
       for each in response:
           if 'choices' in each and 'delta' in each['choices'][0] and 'content' in each['choices'][0]['delta']:
                   yield each['choices'][0]['delta']['content']
-
-
+                  
   @ModelClass.method
   def chat(self,
           messages: List[dict],
@@ -138,7 +142,6 @@ class MyModel(ModelClass):
           yield chunk
 
       thread.join()
-
 
   def test(self):
     """Test the model here."""
