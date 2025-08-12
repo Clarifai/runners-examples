@@ -1,0 +1,13 @@
+model:
+  id: "tpu-model"
+  user_id: "my-user-id"
+  app_id: "my-app-id"
+  model_type_id: "text-to-text"
+
+build_info:
+  python_version: "3.12"
+
+inference_compute_info:
+  tpu_config: "v4-8"
+  tpu_requests: "1"
+  tpu_limit: "1"
