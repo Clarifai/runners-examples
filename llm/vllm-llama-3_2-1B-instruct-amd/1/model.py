@@ -14,7 +14,7 @@ PYTHON_EXEC = sys.executable
 
 def vllm_openai_server(checkpoints, **kwargs):
     """Start vLLM OpenAI compatible server."""
-    
+
     from clarifai.runners.utils.model_utils import execute_shell_command, wait_for_server, terminate_process
     # Start building the command
     cmds = [
@@ -29,7 +29,11 @@ def vllm_openai_server(checkpoints, **kwargs):
             if value:  # Only add the flag if True
                 cmds.append(f'--{param_name}')
         else:
-            cmds.extend([f'--{param_name}', str(value)])
+            if isinstance(value, str) and value.startswith('{') and value.endswith('}'):
+                # likely JSON: wrap in single quotes
+                cmds.extend([f'--{param_name}', f"'{value}'"])
+            else:
+                cmds.extend([f'--{param_name}', str(value)])
     # Create server instance
     server = type('Server', (), {
         'host': kwargs.get('host', '0.0.0.0'),
@@ -37,8 +41,8 @@ def vllm_openai_server(checkpoints, **kwargs):
         'backend': "vllm",
         'process': None
     })()
-    
     try:
+        print(f'Starting vLLM server with command: {" ".join(cmds)}')
         server.process = execute_shell_command(" ".join(cmds))
         logger.info("Waiting for " + f"http://{server.host}:{server.port}")
         wait_for_server(f"http://{server.host}:{server.port}")
@@ -48,7 +52,6 @@ def vllm_openai_server(checkpoints, **kwargs):
         if server.process:
             terminate_process(server.process)
         raise RuntimeError(f"Failed to start vllm server: {str(e)}")
-
     return server
 
 class VLLMLlamaModel(OpenAIModelClass):
@@ -65,19 +68,21 @@ class VLLMLlamaModel(OpenAIModelClass):
     # chat_template = 'examples/tool_chat_template_llama3.1_json.jinja'
 
     server_args = {
-        'max_model_len': 2048,
-        'gpu_memory_utilization': 0.8,
-        'dtype': 'auto',
-        'task': 'auto',
-        'kv_cache_dtype': 'auto',
-        'tensor_parallel_size': 1,
-        'quantization': None,
+        # 'max_model_len': 2048,
+        # 'gpu_memory_utilization': 0.85,
+        # 'dtype': 'auto',
+        # 'task': 'auto',
+        # 'kv_cache_dtype': 'auto',
+        'tensor_parallel_size': 4,
+        # 'quantization': None,
         # 'chat_template': chat_template,
-        'cpu_offload_gb': 0.0,
+        # 'cpu_offload_gb': 0.0,
         'port': 23333,
         'host': 'localhost',
+        "compilation_config": '{"full_cuda_graph": true}'
         # "enable_auto_tool_choice": True,
         # 'tool_call_parser': "llama3_json",
+        
     }
 
     model_path = os.path.dirname(os.path.dirname(__file__))
@@ -131,8 +136,12 @@ class VLLMLlamaModel(OpenAIModelClass):
       tool_calls_json = json.dumps([tc.to_dict() for tc in tool_calls], indent=2)
       return tool_calls_json
     else:
-      # Otherwise, return the content of the first choice
-      return response.choices[0].message.content
+        output_text=""
+        if response.choices[0].message.reasoning_content:
+            output_text += response.choices[0].message.reasoning_content
+        elif response.choices[0].message.content:
+            output_text += response.choices[0].message.content
+        return output_text
     
 
   @OpenAIModelClass.method
@@ -156,7 +165,10 @@ class VLLMLlamaModel(OpenAIModelClass):
         max_completion_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p,
-        stream=True)
+        stream=True,
+        stream_options={
+            "include_usage": True,
+        },)
     
     for chunk in response:
       if chunk.choices:
@@ -171,6 +183,9 @@ class VLLMLlamaModel(OpenAIModelClass):
           yield json_string
         else:
           # Otherwise, return the content of the first choice
-          text = (chunk.choices[0].delta.content
-                  if (chunk and chunk.choices[0].delta.content) is not None else '')
-          yield text
+          output_text=""
+          if chunk.choices[0].delta and chunk.choices[0].delta.get("reasoning_content", None):
+            output_text += chunk.choices[0].delta.get("reasoning_content")
+          elif chunk.choices[0].delta and chunk.choices[0].delta.get("content", None):
+            output_text += chunk.choices[0].delta.get("content")
+          yield output_text

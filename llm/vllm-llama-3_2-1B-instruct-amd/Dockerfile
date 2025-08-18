@@ -1,15 +1,11 @@
 # syntax=docker/dockerfile:1.13-labs
-FROM --platform=$TARGETPLATFORM public.ecr.aws/clarifai-models/amd-vllm:2.8.0.dev20250514-py3.12-rocm6.4-81e942130173f54927e7c9a65aabc7e32780616d as final
+FROM --platform=$TARGETPLATFORM rocm/vllm-dev:open-mi300-08052025 as final
 
 COPY --link requirements.txt /home/nonroot/requirements.txt
 
-ENV VIRTUAL_ENV=/venv
-ENV PATH="/home/nonroot/.local/bin:$VIRTUAL_ENV/bin:$PATH"
-
-
 # Update clarifai package so we always have latest protocol to the API. Everything should land in /venv
-RUN ["uv", "pip", "install", "--no-cache-dir", "-r", "/home/nonroot/requirements.txt"]
-RUN ["uv", "pip", "show", "--no-cache-dir", "clarifai"]
+RUN ["pip", "install", "--no-cache-dir", "-r", "/home/nonroot/requirements.txt"]
+RUN ["pip", "show", "clarifai"]
 
 # Set the NUMBA cache dir to /tmp
 # Set the TORCHINDUCTOR cache dir to /tmp
@@ -18,6 +14,10 @@ ENV NUMBA_CACHE_DIR=/tmp/numba_cache \
     TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_cache \
     HOME=/tmp \
     DEBIAN_FRONTEND=noninteractive
+
+ENV VLLM_ROCM_USE_AITER=1
+ENV VLLM_USE_AITER_UNIFIED_ATTENTION=1
+ENV VLLM_ROCM_USE_AITER_MHA=0
 
 #####
 # Copy the files needed to download
@@ -46,7 +46,7 @@ ENV PYTHONPATH=${PYTHONPATH}:/home/nonroot/main \
     CLARIFAI_RUNNER_ID=${CLARIFAI_RUNNER_ID} \
     CLARIFAI_NODEPOOL_ID=${CLARIFAI_NODEPOOL_ID} \
     CLARIFAI_COMPUTE_CLUSTER_ID=${CLARIFAI_COMPUTE_CLUSTER_ID} \
-    CLARIFAI_API_BASE=${CLARIFAI_API_BASE:-https://api.clarifai.com}
+    CLARIFAI_API_BASE=${CLARIFAI_API_BASE:-https://api-dev.clarifai.com}
 
 # Finally run the clarifai entrypoint to start the runner loop and local dev server.
 # Note(zeiler): we may want to make this a clarifai CLI call.
