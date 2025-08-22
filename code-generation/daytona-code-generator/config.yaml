@@ -1,0 +1,19 @@
+model:
+  id: "daytona-code-generator"
+  user_id: "user_id"
+  app_id: "app_id"
+  model_type_id: "text-to-text"
+
+build_info:
+  python_version: "3.12"
+
+inference_compute_info:
+  cpu_limit: "4"
+  cpu_memory: "8Gi"
+  num_accelerators: 0
+
+checkpoints:
+  type: "huggingface"
+  repo_id: "Qwen/Qwen2-0.5B-Instruct"
+  hf_token: "hf_token"
+  when: "runtime"
