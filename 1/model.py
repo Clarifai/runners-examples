@@ -66,7 +66,7 @@ def _wait_for_port(port: int, timeout: float = 30.0):
         time.sleep(0.5)
     raise RuntimeError(f"Server did not start listening on port {port} within {timeout}s")
 
-def run_lms_server(model_name: str = 'LiquidAI/LFM2-1.2B-GGUF', port: int = 11434,
+def run_lms_server(model_name: str = 'LiquidAI/LFM2-1.2B-GGUF', port: int = 1234,
                    context_length: int = 4096) -> None:
     """
     Start the lmstudio server with ordered, real‑time logs.
