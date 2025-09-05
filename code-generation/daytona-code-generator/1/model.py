@@ -9,13 +9,13 @@ from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.utils.data_utils import Param
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from daytona import Daytona, DaytonaConfig
+from daytona import Daytona
 
 # Load environment variables from .env file
 load_dotenv()
 
 class MyModel(ModelClass):
-    """A CPU-only model that uses Qwen2-0.5B to generate and execute Python code in a Daytona sandbox."""
+    """A CPU-only model that uses Qwen2.5-0.5B to generate and execute Python code in a Daytona sandbox."""
 
     def load_model(self):
         """Load the model and initialize the Daytona client."""
@@ -36,7 +36,10 @@ class MyModel(ModelClass):
 
         # Initialize Daytona client
         # It will automatically look for DAYTONA_API_KEY in the environment
+
         try:
+            with open(os.path.join(os.path.dirname(__file__), "daytona_api_key"), "r") as fh:
+                os.environ["DAYTONA_API_KEY"] = fh.read().strip()
             self.daytona = Daytona()
             logger.info("Daytona client initialized successfully.")
         except Exception as e:
