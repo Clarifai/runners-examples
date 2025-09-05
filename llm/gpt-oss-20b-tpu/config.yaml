@@ -1,0 +1,18 @@
+model:
+  app_id: gpt-oss-20b-tpu-app
+  id: gpt-oss-20b-tpu-model
+  model_type_id: text-to-text
+  user_id: clarifai-user-id
+
+build_info:
+  python_version: '3.12'
+
+hugging_face:
+  access_token_secret: hugging_face_access_token
+
+inference_compute_info:
+  cpu_limit: "8"
+  cpu_memory: "60Gi"
+  num_accelerators: 1
+  accelerator_type: ["GOOGLE-TPU-v6e"]
+  accelerator_topology: ["1x1"]
