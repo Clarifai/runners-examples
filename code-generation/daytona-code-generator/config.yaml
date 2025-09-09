@@ -14,6 +14,6 @@ inference_compute_info:
 
 checkpoints:
   type: "huggingface"
-  repo_id: "Qwen/Qwen2-0.5B-Instruct"
+  repo_id: "Qwen/Qwen2.5-0.5B-Instruct"
   hf_token: "hf_token"
   when: "runtime"
