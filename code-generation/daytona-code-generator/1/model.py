@@ -143,6 +143,14 @@ Please provide only the raw Python code, without any explanations, comments, or 
                 sandbox.delete()
                 logger.info("Sandbox deleted.")
 
+    @ModelClass.method
+    def generate(self, prompt: str = Param(default="", description="The user prompt to generate and execute Python code.")) -> Dict:
+        """
+        Generates Python code based on the prompt, executes it in a Daytona sandbox,
+        and returns both the code and the execution result.
+        """
+        yield self.predict(prompt)
+
     def test(self):
         """A simple test for the model."""
         logger.info("Running test...")
