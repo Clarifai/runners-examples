@@ -16,10 +16,9 @@ class FirecrawlService:
     def __init__(self):
         firecrawl_api_key = None
         try:
-            clarifai_pat = os.getenv("CLARIFAI_PAT")
             firecrawl_api_key = os.getenv("FIRECRAWL_API_KEY", None)
         except Exception as e:
-            raise ValueError(f"Missing CLARIFAI_PAT environment variable or user doesn't contain firecrawl_api_key secret: {e}")
+            raise ValueError(f"User doesn't contain firecrawl_api_key secret: {e}")
         api_key = firecrawl_api_key
         self.app = FirecrawlApp(api_key=api_key)
 
