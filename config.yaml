@@ -11,3 +11,6 @@ model:
   user_id: clarifai-user-id
 toolkit:
   provider: lmstudio
+  model: LiquidAI/LFM2-1.2B
+  port: 11434
+  context_length: 2048
