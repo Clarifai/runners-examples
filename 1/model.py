@@ -7,6 +7,7 @@ import subprocess
 from typing import List, Iterator
 
 from clarifai.runners.models.openai_class import OpenAIModelClass
+from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.utils.logging import logger
 
 from clarifai.runners.utils.data_utils import Param
@@ -17,10 +18,6 @@ from openai import OpenAI
 
 
 VERBOSE_LMSTUDIO = True # Set to True to see the output of the lmstudio server in the logs
-LMS_MODEL_NAME =  "LiquidAI/LFM2-1.2B" # Default model name
-LMS_PORT = 11434 # Default port for the lmstudio server
-LMS_CONTEXT_LENGTH = 4096 # Default context length for the lmstudio model
-
 
 def _stream_command(cmd: str, verbose: bool = True):
     """
@@ -66,7 +63,7 @@ def _wait_for_port(port: int, timeout: float = 30.0):
         time.sleep(0.5)
     raise RuntimeError(f"Server did not start listening on port {port} within {timeout}s")
 
-def run_lms_server(model_name: str = 'LiquidAI/LFM2-1.2B-GGUF', port: int = 1234,
+def run_lms_server(model_name: str = 'LiquidAI/LFM2-1.2B-GGUF', port: int = 11434,
                    context_length: int = 4096) -> None:
     """
     Start the lmstudio server with ordered, real‑time logs.
@@ -118,11 +115,14 @@ class LMstudioModelClass(OpenAIModelClass):
         """
         Load the lmstudio model.
         """
-        #set the model name here or via OLLAMA_MODEL_NAME
-        self.model = LMS_MODEL_NAME 
-        self.port = LMS_PORT
-        #start ollama server
-        run_lms_server(model_name=self.model, port=self.port)
+        model_path = os.path.dirname(os.path.dirname(__file__))
+        builder = ModelBuilder(model_path, download_validation_only=True)
+        self.model = builder.config['toolkit']['model']
+        self.port = builder.config['toolkit']['port']
+        self.context_length = builder.config['toolkit']['context_length']
+        
+        #start lmstudio server
+        run_lms_server(model_name=self.model, port=self.port, context_length=self.context_length)
 
         self.client = OpenAI(
                 api_key="notset",
