@@ -1,0 +1,16 @@
+build_info:
+  python_version: '3.11'
+inference_compute_info:
+  cpu_limit: 1000m
+  cpu_memory: 1Gi
+  num_accelerators: 0
+model:
+  app_id: mcp
+  id: slack-mcp-server
+  model_type_id: text-to-text
+  user_id: user_id
+secrets:
+  - id: "slack_key"
+    type: "env"
+    env_var: "SLACK_BOT_TOKEN"
+    description: "API key of Slack for messaging and channel management"
