@@ -26,8 +26,9 @@ def get_docker_client():
         except Exception as e:
             # Try alternative connection methods for different Docker setups
             try:
+                # TODO: replace base_url with your local machine's docker socket 
                 _docker_client = docker.DockerClient(
-                    base_url='unix:///Users/bingqingyu/.rd/docker.sock'
+                    base_url='unix:///Users/YOUR_USER_NAME/.rd/docker.sock'
                 )
                 _docker_client.ping()
             except:
