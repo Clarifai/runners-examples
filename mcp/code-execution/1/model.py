@@ -24,18 +24,12 @@ def get_docker_client():
             _docker_client = docker.from_env()
             _docker_client.ping()
         except Exception as e:
-            # Try alternative connection methods for different Docker setups
             try:
-                _docker_client = docker.DockerClient(
-                    base_url='unix:///Users/bingqingyu/.rd/docker.sock'
-                )
+                _docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
                 _docker_client.ping()
             except:
-                try:
-                    _docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-                    _docker_client.ping()
-                except:
-                    raise Exception(f"Cannot connect to Docker daemon. Original error: {e}")
+                raise Exception(f"Cannot connect to Docker daemon. Original error: {e}")
+
     return _docker_client
 
 
