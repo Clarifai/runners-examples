@@ -8,4 +8,4 @@ model:
   app_id: test-mcp
   id: browser-search-mcp-model
   model_type_id: text-to-text
-  user_id: mogith-p-n
+  user_id: clarifai-user-id
