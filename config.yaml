@@ -1,19 +1,13 @@
 model:
-  id: MODEL_ID
-  user_id: USER_ID
-  app_id: APP_ID
-  model_type_id: text-to-text
+  id: "MODEL_ID"
+  user_id: "USER_ID"
+  app_id: "APP_ID"
+  model_type_id: "any-to-any"
+
 build_info:
-  python_version: '3.12'
+  python_version: "3.12"
+
 inference_compute_info:
-  accelerator_memory: 5Gi
-  accelerator_type:
-  - NVIDIA-*
-  cpu_limit: '1'
-  cpu_memory: 5Gi
-  num_accelerators: 1
-checkpoints:
-  repo_id: google/gemma-3-1b-it
-  type: huggingface
-  when: runtime
-  hf_token: your_hf_token
+  cpu_limit: "1"
+  cpu_memory: 500Mi
+  num_accelerators: 0
