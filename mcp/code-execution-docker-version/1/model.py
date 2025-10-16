@@ -46,7 +46,7 @@ def get_docker_client():
 
             alternative_sockets = [
                 # TODO: UPDATE THIS PATH - Replace with your actual Docker socket path
-                'unix:///Users/bingqingyu/.rd/docker.sock',  # Example: Rancher Desktop on Mac
+                'unix:///Users/YOUR_USERNAME/.rd/docker.sock',  # Example: Rancher Desktop on Mac
 
                 # Standard paths (may work by default)
                 'unix:///var/run/docker.sock',  # Standard Linux/Mac path
