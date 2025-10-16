@@ -62,7 +62,6 @@ class VLLMLlamaModel(OpenAIModelClass):
     """Load the model here and start the  server."""
     os.path.join(os.path.dirname(__file__))
     # This is the path to the chat template file and you can get this chat template from vLLM repo(https://github.com/vllm-project/vllm/blob/main/examples/tool_chat_template_llama3.1_json.jinja)
-    chat_template = 'examples/tool_chat_template_llama3.1_json.jinja'
 
     server_args = {
         'max_model_len': 2048,
