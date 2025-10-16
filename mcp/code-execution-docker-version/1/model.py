@@ -17,26 +17,67 @@ _docker_client = None
 
 
 def get_docker_client():
-    """Get or create Docker client."""
+    """
+    Get or create Docker client.
+
+    IMPORTANT: This function connects to your local Docker daemon.
+    If the default connection fails, you MUST configure the Docker socket path
+    for your specific system in the fallback options below.
+    """
     global _docker_client
     if _docker_client is None:
         try:
+            # Try default Docker environment connection
             _docker_client = docker.from_env()
             _docker_client.ping()
         except Exception as e:
-            # Try alternative connection methods for different Docker setups
-            try:
-                # TODO: replace base_url with your local machine's docker socket 
-                _docker_client = docker.DockerClient(
-                    base_url='unix:///Users/YOUR_USER_NAME/.rd/docker.sock'
-                )
-                _docker_client.ping()
-            except:
+            print(f"Default Docker connection failed: {e}")
+            print("Trying alternative Docker socket paths...")
+
+            # ============================================================================
+            # CONFIGURATION REQUIRED: Update these paths for your local machine
+            # ============================================================================
+            # Common Docker socket paths:
+            # - Docker Desktop (Mac): unix:///Users/YOUR_USERNAME/.docker/run/docker.sock
+            # - Rancher Desktop (Mac): unix:///Users/YOUR_USERNAME/.rd/docker.sock
+            # - Linux: unix:///var/run/docker.sock
+            # - Docker Desktop (Windows): npipe:////./pipe/docker_engine
+            # ============================================================================
+
+            alternative_sockets = [
+                # TODO: UPDATE THIS PATH - Replace with your actual Docker socket path
+                'unix:///Users/YOUR_USERNAME/.rd/docker.sock',  # Example: Rancher Desktop on Mac
+
+                # Standard paths (may work by default)
+                'unix:///var/run/docker.sock',  # Standard Linux/Mac path
+                'unix://~/.docker/run/docker.sock',  # Docker Desktop alternate path
+            ]
+
+            connected = False
+            for socket_path in alternative_sockets:
                 try:
-                    _docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+                    print(f"Trying socket: {socket_path}")
+                    _docker_client = docker.DockerClient(base_url=socket_path)
                     _docker_client.ping()
-                except:
-                    raise Exception(f"Cannot connect to Docker daemon. Original error: {e}")
+                    print(f"Successfully connected to Docker via: {socket_path}")
+                    connected = True
+                    break
+                except Exception as socket_error:
+                    print(f"Failed to connect via {socket_path}: {socket_error}")
+                    continue
+
+            if not connected:
+                raise Exception(
+                    f"Cannot connect to Docker daemon. Original error: {e}\n\n"
+                    f"SETUP REQUIRED:\n"
+                    f"1. Ensure Docker is running on your local machine\n"
+                    f"2. Find your Docker socket path (run: docker context inspect)\n"
+                    f"3. Update the 'alternative_sockets' list in model.py with your socket path\n"
+                    f"4. Common paths:\n"
+                    f"   - Rancher Desktop (Mac): unix:///Users/YOUR_USERNAME/.rd/docker.sock\n"
+                    f"   - Docker Desktop (Mac): unix:///Users/YOUR_USERNAME/.docker/run/docker.sock\n"
+                    f"   - Linux: unix:///var/run/docker.sock\n"
+                )
     return _docker_client
 
 
