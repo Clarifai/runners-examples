@@ -45,7 +45,7 @@ class SglangModel(OpenAIModelClass):
                     'max_prefill_tokens': None,
                     'schedule_policy': 'fcfs',
                     'schedule_conservativeness': 1.0,
-                    'checkpoints': 'runtime'}
+                    'checkpoints': 'HuggingFaceTB/SmolLM2-1.7B-Instruct'}
 
         # if checkpoints == "checkpoints" => assign to checkpoints var aka local checkpoints path
         stage = server_args.get("checkpoints")

@@ -1,5 +1,0 @@
-# Clarifai SDK - required
-clarifai
-fastmcp
-pydantic
-docker
