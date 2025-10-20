@@ -16,5 +16,6 @@ psutil
 
 torch==2.6.0
 --find-links https://flashinfer.ai/whl/cu124/torch2.6/flashinfer-python
+flashinfer-python
 sglang[all]==0.4.6.post3
 transformers
