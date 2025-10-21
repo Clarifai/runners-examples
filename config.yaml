@@ -1,7 +1,7 @@
 # Config file for the Sglang runner
 
 model:
-  id: "SmolLM2-1_7B-Instruct"
+  id: "SmolLM2-135M-Instruct"
   user_id: "YOUR_USER_ID" 
   app_id: "YOUR_APP_ID" 
   model_type_id: "text-to-text"
@@ -16,3 +16,8 @@ inference_compute_info:
   accelerator_type:
   - NVIDIA-L40S
   accelerator_memory: 42Gi
+
+checkpoints:
+  repo_id: HuggingFaceTB/SmolLM2-135M-Instruct
+  type: huggingface
+  when: runtime
