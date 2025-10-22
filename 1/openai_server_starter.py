@@ -135,7 +135,6 @@ class OpenAI_APIServer:
         schedule_policy: str = "fcfs",
         schedule_conservativeness: float = 1.0,
         cpu_offload_gb: int = 0,
-        attention_backend: str = "torch_native",
         additional_list_args: List[str] = [],
     ):
         """Start SGlang OpenAI compatible server.
@@ -159,7 +158,6 @@ class OpenAI_APIServer:
             schedule_policy (str, optional): The scheduling policy of the requests {"lpm", "random", "fcfs", "dfs-weight"}. Defaults to "fcfs".
             schedule_conservativeness (float, optional): How conservative the schedule policy is. A larger value means more conservative scheduling. Use a larger value if you see requests being retracted frequently. Defaults to 1.0.
             cpu_offload_gb (int, optional): How many GBs of RAM to reserve for CPU offloading. Defaults to 0.
-            attention_backend (str, optional): The attention backend to use. Defaults to "torch_native".
             additional_list_args (List[str], optional): additional args to run subprocess cmd e.g. ["--arg-name", "arg value"]. See more at [github](https://github.com/sgl-project/sglang/blob/1baa9e6cf90b30aaa7dae51c01baa25229e8f7d5/python/sglang/srt/server_args.py#L298). Defaults to [].
 
         Returns:
@@ -174,8 +172,6 @@ class OpenAI_APIServer:
             "sglang.launch_server",
             "--model-path",
             checkpoints,
-            "--attention-backend",
-            attention_backend,
             "--dtype",
             str(dtype),
             "--device",

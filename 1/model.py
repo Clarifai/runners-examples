@@ -48,7 +48,6 @@ class SglangModel(OpenAIModelClass):
             'schedule_policy': 'fcfs',
             'schedule_conservativeness': 1.0,
             'checkpoints': 'runtime',
-            'attention_backend': 'torch_native',
         }
 
         # if checkpoints == "checkpoints" => assign to checkpoints var aka local checkpoints path
