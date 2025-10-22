@@ -164,7 +164,7 @@ class OpenAI_APIServer:
             _type_: _description_
         """
 
-        from sglang.utils import execute_shell_command, wait_for_server
+        from clarifai.runners.utils.model_utils import execute_shell_command, wait_for_server
 
         cmds = [
             PYTHON_EXEC,
