@@ -1,2 +1,2 @@
-clarifai==11.8.5
+clarifai
 openai
