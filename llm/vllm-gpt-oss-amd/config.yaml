@@ -1,0 +1,20 @@
+model:
+  id: "vllm-gpt-oss-120b-amd"
+  user_id: "luv_2261"
+  app_id: "test-upload"
+  model_type_id: "text-to-text"
+
+build_info:
+  python_version: '3.12'
+
+inference_compute_info:
+  cpu_limit: '90'
+  cpu_memory: 1000Gi
+  num_accelerators: 4
+  accelerator_type: ["AMD-*"]
+  accelerator_memory: 120Gi
+
+checkpoints:
+  type: "huggingface"
+  repo_id: "openai/gpt-oss-120b"
+  when: "runtime"
