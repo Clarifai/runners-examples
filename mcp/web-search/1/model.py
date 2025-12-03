@@ -1,12 +1,11 @@
-from __future__ import annotations
-import os, re
+import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx  # type: ignore
 from bs4 import BeautifulSoup  # type: ignore
-from mcp.server.fastmcp import FastMCP, Context  # type: ignore
+from fastmcp import FastMCP  # type: ignore
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -140,8 +139,8 @@ async def fetch_page(url: str, timeout: int = 20) -> PageCache:
     return PageCache(url=url, text_lines=lines)
 
 # ---------------- FastMCP Server (in-process) ----------------
-mcp = FastMCP(
-    name="duckduckgo-browser",
+server = FastMCP(
+    "duckduckgo-browser",
     instructions=r"""
 Tool for browsing.
 The `cursor` appears in brackets before each browsing display: `[{cursor}]`.
@@ -150,14 +149,12 @@ Cite information from the tool using the following format:
 Do not quote more than 10 words directly from the tool output.
 sources=web
 """.strip(),
-    port=8001,
+    stateless_http=True,
 )
 
-@mcp.tool(
-    name="search",
-    title="Search for information",
-    description=
-    "Searches for information related to `query` and displays `topn` results.",
+@server.tool(
+    "search",
+    description="Searches for information related to `query` and displays `topn` results.",
 )
 async def search(query: str, topn: int = 10,
                  region: str = "wt-wt", safesearch: str = "moderate") -> str:
@@ -172,9 +169,8 @@ async def search(query: str, topn: int = 10,
         return f"Search error: {e}"
     return format_search_results(results)
 
-@mcp.tool(
-    name="open",
-    title="Open a link or page",
+@server.tool(
+    "open",
     description="""
 Opens the link `id` from the page indicated by `cursor` starting at line number `loc`, showing `num_lines` lines.
 Valid link ids are displayed with the formatting: `【{id}†.*】`.
@@ -208,11 +204,9 @@ async def open(id: Union[int, str] = -1,
     print(f"[open] Returning lines {loc+1}-{end} of {total}")
     return f"URL: {url}\nLines {loc+1}-{end} of {total}\n" + "-"*60 + "\n" + body
 
-@mcp.tool(
-    name="find",
-    title="Find pattern in page",
-    description=
-    "Finds exact matches of `pattern` in the current page, or the page given by `cursor`.",
+@server.tool(
+    "find",
+    description="Finds exact matches of `pattern` in the current page, or the page given by `cursor`.",
 )
 async def find(pattern: str, url: Optional[str] = None, max_matches: int = 50) -> str:
     print(f"[find] pattern={pattern}, url={url}, max_matches={max_matches}")
@@ -234,13 +228,13 @@ async def find(pattern: str, url: Optional[str] = None, max_matches: int = 50) -
     print(f"[find] Found {len(hits)} matches")
     return "\n".join(hits) if hits else f"No matches for '{pattern}'."
 
-@mcp.resource("config://browser_search_settings")
+@server.resource("config://browser_search_settings")
 def get_browser_search_settings() -> Dict[str, str]:
     return {
         "available_tools": ["search", "open", "find"],
     }
     
-@mcp.prompt()
+@server.prompt()
 def web_browsing_prompt(task_type: str) -> str:
     """
     Generate a usage prompt for web browsing and extraction tasks, tailored to the available tools in this file.
@@ -299,7 +293,7 @@ from clarifai.runners.models.mcp_class import MCPModelClass
 
 class MyBrowserSearchToolClass(MCPModelClass):
     def get_server(self) -> FastMCP:
-        return mcp
+        return server
 
 # Main function to run the MCP server
 if __name__ == "__main__":
@@ -308,7 +302,7 @@ if __name__ == "__main__":
     
     # Simple approach - just run the server
     try:
-        asyncio.run(mcp.run())
+        asyncio.run(server.run())
     except KeyboardInterrupt:
         print("Server stopped by user", file=sys.stderr)
         sys.exit(0)
