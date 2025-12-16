@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.13-labs
-FROM --platform=$TARGETPLATFORM lmsysorg/sglang:v0.5.3-cu129 as final
+FROM --platform=$TARGETPLATFORM lmsysorg/sglang@sha256:09bb578bc4beaeb81a269f72950ff3daba1ea50189a09388466d89cbc4bae228 as final 
 COPY --link requirements.txt /home/nonroot/requirements.txt
+
 
 # Update clarifai package so we always have latest protocol to the API. Everything should land in /venv
 RUN ["pip", "install", "--no-cache-dir", "-r", "/home/nonroot/requirements.txt"]
