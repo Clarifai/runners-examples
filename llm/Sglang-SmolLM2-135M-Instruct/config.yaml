@@ -14,8 +14,8 @@ inference_compute_info:
   cpu_memory: 14Gi
   num_accelerators: 1
   accelerator_type:
-  - NVIDIA-L40S
-  accelerator_memory: 42Gi
+  - NVIDIA-*
+  accelerator_memory: 5Gi
 
 checkpoints:
   repo_id: HuggingFaceTB/SmolLM2-135M-Instruct
