@@ -24,6 +24,7 @@ class TextToImageModel(ModelClass):
     model_path = os.path.dirname(os.path.dirname(__file__))
     builder = ModelBuilder(model_path, download_validation_only=True)
     checkpoints = builder.download_checkpoints(stage="runtime")
+
     # load model and scheduler
     self.pipeline = FluxPipeline.from_pretrained(
       checkpoints,
@@ -68,7 +69,7 @@ class TextToImageModel(ModelClass):
   
   
   @ModelClass.method
-  def create(
+  def generate(
     self,
     prompt: List[str],
     prompt_2: List[str] = None,
