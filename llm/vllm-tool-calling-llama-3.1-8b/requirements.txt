@@ -1,23 +1,16 @@
-tokenizers==0.21.0
+tokenizers==0.22.0
 accelerate==1.2.0
 optimum==1.23.3
-# xformers
 einops==0.8.0
 packaging
 ninja
 
-qwen-vl-utils==0.0.8
 timm
 openai
-clarifai
+clarifai==12.1.1
 psutil
 
-torch==2.6.0
-vllm==0.8.0
-transformers==4.50.1
-backoff==2.2.1
-peft>=0.13.2
-soundfile>=0.13.1
-scipy==1.15.2
-librosa
-decord
+torch==2.9.0
+vllm==0.12.0
+transformers==4.56.0
+hf-transfer
