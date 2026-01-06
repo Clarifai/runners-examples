@@ -1,4 +1,4 @@
-tokenizers==0.21.1
+tokenizers==0.22.0
 accelerate==1.2.0
 optimum==1.23.3
 einops==0.8.0
@@ -7,10 +7,10 @@ ninja
 
 timm
 openai
-clarifai==11.12.2
+clarifai==12.1.1
 psutil
 
-torch==2.7.1
-vllm==0.10.0
-transformers==4.53.2
+torch==2.9.0
+vllm==0.12.0
+transformers==4.56.0
 hf-transfer
