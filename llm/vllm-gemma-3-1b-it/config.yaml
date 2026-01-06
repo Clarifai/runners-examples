@@ -1,19 +1,18 @@
 build_info:
   python_version: '3.12'
 checkpoints:
-  hf_token: "<your_hf_token>"
   repo_id: google/gemma-3-1b-it
   type: huggingface
   when: runtime
 inference_compute_info:
-  accelerator_memory: 5Gi
+  accelerator_memory: 8Gi
   accelerator_type:
   - NVIDIA-*
   cpu_limit: '1'
-  cpu_memory: 5Gi
+  cpu_memory: 12Gi
   num_accelerators: 1
 model:
-  app_id: APP_ID
-  id: MODEL_ID
+  app_id: app_id
+  id: gemma-3-1b-it
   model_type_id: text-to-text
-  user_id: USER_ID
+  user_id: user_id
