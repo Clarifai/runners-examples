@@ -65,16 +65,12 @@ class VLLMLlamaModel(OpenAIModelClass):
 
     server_args = {
         'max_model_len': 2048,
-        #'gpu_memory_utilization': 0.8,
+        'gpu_memory_utilization': 0.9,
         'dtype': 'auto',
         'task': 'auto',
         'kv_cache_dtype': 'auto',
         'tensor_parallel_size': 1,
-        'quantization': None,
-        'cpu_offload_gb': 5.0,
-        'chat_template': None,
         'port': 23333,
-        
         'host': 'localhost',
     }
 
