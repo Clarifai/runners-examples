@@ -51,9 +51,9 @@ def vllm_openai_server(checkpoints, **kwargs):
 
     return server
 
-class VLLMLlamaModel(OpenAIModelClass):
+class VLLMGemmaModel(OpenAIModelClass):
   """
-  A Model that integrates with the Clarifai platform and uses vLLM framework for inference to run the Llama 3.1 8B model with tool calling capabilities.
+  A Model that integrates with the Clarifai platform and uses vLLM framework for inference to run the Gemma model.
   """
   client = True  # This will be set in load_model method
   model = True  # This will be set in load_model method
@@ -61,8 +61,7 @@ class VLLMLlamaModel(OpenAIModelClass):
   def load_model(self):
     """Load the model here and start the  server."""
     os.path.join(os.path.dirname(__file__))
-    # This is the path to the chat template file and you can get this chat template from vLLM repo(https://github.com/vllm-project/vllm/blob/main/examples/tool_chat_template_llama3.1_json.jinja)
-
+    
     server_args = {
         'max_model_len': 2048,
         'gpu_memory_utilization': 0.9,
@@ -102,7 +101,7 @@ class VLLMLlamaModel(OpenAIModelClass):
               top_p: float = Param(default=0.95, description="An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass."), 
               ) -> str:
     """
-    This method is used to predict the response for the given prompt and chat history using the model and tools.
+    This method is used to predict the response for the given prompt.
     """
     if tools is not None and tool_choice is None:
         tool_choice = "auto"
