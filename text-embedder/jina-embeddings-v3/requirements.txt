@@ -1,4 +1,4 @@
-transformers #4.52.4
-clarifai #11.4.10
-onnxruntime
-numpy
+clarifai==12.1.1
+vllm==0.13.0
+openai==2.14.0
+hf-transfer==0.1.9
