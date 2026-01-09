@@ -1,0 +1,14 @@
+model:
+  id: browser-mcp-server
+  app_id: app_id 
+  user_id: user_id
+  model_type_id: text-to-text
+build_info:
+  python_version: '3.11'
+inference_compute_info:
+  cpu_limit: 1000m
+  cpu_memory: 1Gi
+  num_accelerators: 0
+mcp_server:
+  command: "uvx"
+  args: ["duckduckgo-mcp-server"]
