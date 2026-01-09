@@ -11,6 +11,6 @@ numpy>2.0
 ninja
 aiohttp
 packaging
-clarifai>=11.12.2
+clarifai>=12.1.1
 clarifai-protocol>=0.0.34
 clarifai-grpc>=11.11.8

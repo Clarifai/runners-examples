@@ -1,6 +1,6 @@
 model: 
   id: "flux_1-schnell"
-  user_id: phatvo
+  user_id: 
   app_id: image-model
   model_type_id: "text-to-image"
 
