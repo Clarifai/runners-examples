@@ -1,92 +1,192 @@
-from typing import List, Iterator
 import os
-from clarifai.runners.models.openai_class import OpenAIModelClass
+import sys
+from typing import List
+
+# Clarifai Runner utilities:
+# - ModelBuilder: handles checkpoint resolution & download logic
+# - OpenAIModelClass: base class for OpenAI-compatible runners
 from clarifai.runners.models.model_builder import ModelBuilder
-
-import onnxruntime
-import numpy as np
-from transformers import AutoTokenizer, PretrainedConfig
-
+from clarifai.runners.models.openai_class import OpenAIModelClass
 from clarifai.utils.logging import logger
 
-#Helper function Mean pool function
-def mean_pooling(model_output: np.ndarray, attention_mask: np.ndarray):
-            token_embeddings = model_output
-            input_mask_expanded = np.expand_dims(attention_mask, axis=-1)
-            input_mask_expanded = np.broadcast_to(input_mask_expanded, token_embeddings.shape)
-            sum_embeddings = np.sum(token_embeddings * input_mask_expanded, axis=1)
-            sum_mask = np.clip(np.sum(input_mask_expanded, axis=1), a_min=1e-9, a_max=None)
-            return sum_embeddings / sum_mask
-        
-class Jinaai_embedding_v2(OpenAIModelClass):
+# Official OpenAI Python client.
+# vLLM exposes an OpenAI-compatible API, so we can reuse this client.
+from openai import OpenAI
+
+# Absolute path to the Python interpreter running this process.
+# Used to ensure the vLLM server is launched with the same Python environment.
+PYTHON_EXEC = sys.executable
+
+
+# ----------------------------------------------------------------------
+# vLLM OpenAI-compatible server launcher
+# ----------------------------------------------------------------------
+def vllm_openai_server(checkpoints, **kwargs) -> object:
     """
-    A custom runner that integrates with the Clarifai platform and uses Jinaai embedding v2 model to process inputs, including text and images.
+    Launch a vLLM OpenAI-compatible API server as a subprocess.
+
+    Args:
+        checkpoints (str):
+            Path or HuggingFace repo ID of the model to load.
+        **kwargs:
+            Extra vLLM server CLI arguments (e.g. dtype, port, host).
+
+    Returns:
+        server (object):
+            A lightweight object containing server metadata and process handle.
     """
+
+    # Utility functions provided by Clarifai for:
+    # - spawning shell commands
+    # - waiting until HTTP server is ready
+    # - terminating subprocesses cleanly
+    from clarifai.runners.utils.model_utils import (
+        execute_shell_command,
+        wait_for_server,
+        terminate_process,
+    )
+
+    # Base command to start vLLM's OpenAI-compatible API server
+    cmds = [
+        PYTHON_EXEC,                                # Use current Python binary
+        "-m",
+        "vllm.entrypoints.openai.api_server",       # vLLM OpenAI server entrypoint
+        "--model",
+        checkpoints,                                # Model checkpoint path or repo ID
+    ]
+
+    # Convert keyword arguments into CLI flags
+    # Example:
+    #   dtype="float16"  -> --dtype float16
+    #   trust_remote_code=True -> --trust-remote-code
+    for key, value in kwargs.items():
+        if value is None:
+            continue
+        param_name = key.replace("_", "-")
+        if isinstance(value, bool):
+            if value:
+                cmds.append(f"--{param_name}")
+        else:
+            cmds.extend([f"--{param_name}", str(value)])
+
+    # Create a lightweight "server" object dynamically
+    # This avoids defining a full class just for metadata storage
+    server = type(
+        "Server",
+        (),
+        {
+            "host": kwargs.get("host", "0.0.0.0"),
+            "port": kwargs.get("port", 23333),
+            "backend": "vllm",
+            "process": None,
+        },
+    )()
+
+    try:
+        # Launch the vLLM server process
+        server.process = execute_shell_command(" ".join(cmds))
+
+        # Wait until the server is ready to accept requests
+        wait_for_server(f"http://{server.host}:{server.port}")
+        logger.info(f"vLLM server running at http://{server.host}:{server.port}")
+    except Exception as e:
+        # Cleanup if server failed to start
+        if server.process:
+            terminate_process(server.process)
+        raise RuntimeError(f"Failed to start vLLM server: {e}")
+
+    return server
+
+
+# ----------------------------------------------------------------------
+# Embeddings Runner
+# ----------------------------------------------------------------------
+class VLLMJinaEmbeddingsModel(OpenAIModelClass):
+    """
+    Clarifai Runner for `jinaai/jina-embeddings-v3`.
+
+    - Uses vLLM as the inference backend
+    - Exposes an OpenAI-compatible `/v1/embeddings` endpoint
+    - Integrates seamlessly with Clarifai's OpenAIModelClass
+    """
+
+    # Required flags for OpenAIModelClass
     client = True
-    model = "jinaai-embedding-v3"
-    
+    model = True
+
     def load_model(self):
-        """Load the model here and start the server."""
-        
-        # Load checkpoints
-        model_path = os.path.dirname(os.path.dirname(__file__))
-        builder = ModelBuilder(model_path, download_validation_only=True)
-        logger.info(f"\nDownloading Jinaai {self.model} model checkpoints...\n")
-        self.checkpoints =  builder.download_checkpoints(stage='runtime')
-        logger.info(f"Checkpoints downloaded to {self.checkpoints}")
-        
-        #logger.info("Loading Jinaai embedding v3 model...")
-        self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoints)
-        self.config = PretrainedConfig.from_pretrained(self.checkpoints)
-        
-        #logger.info(f"Tokenizer and config loaded from 'jinaai/jinaai-embeddings-v3'")
-        self.session = onnxruntime.InferenceSession(self.checkpoints + '/onnx/model.onnx')
-        
-        # log that system is ready
-        logger.info(f"Jinaai {self.model} model loaded successfully!")
-    
-    def tokenize_and_embed(self, input: str):
         """
-        Tokenize the input text and return the embedding vector.
-        
-        Args:
-            input (str): The input text to be tokenized and embedded.
-        
-        Returns:
-            np.ndarray: The embedding vector for the input text.
+        Called once when the runner starts.
+
+        Responsibilities:
+        - Resolve and download model checkpoints
+        - Launch vLLM OpenAI-compatible server
+        - Initialize OpenAI client pointing to vLLM
         """
-        # Tokenize input
-        input_text = self.tokenizer(input, return_tensors='np')
-           # Prepare inputs for ONNX model
-        task_type = 'text-matching'
-        task_id = np.array(self.config.lora_adaptations.index(task_type), dtype=np.int64)
-        inputs = {
-            'input_ids': input_text['input_ids'],
-            'attention_mask': input_text['attention_mask'],
-            'task_id': task_id
+
+        # vLLM server configuration
+        server_args = {
+            "dtype": "float16",                 # Use float16 for faster inference
+            "trust_remote_code": True,          # Trust custom model code from HuggingFace
+            "gpu_memory_utilization": 0.9,      # Max GPU memory usage
+            "tensor_parallel_size": 1,          # Single-GPU setup
+            "port": 23333,
+            "host": "localhost",
         }
 
-        # Run model
-        outputs = self.session.run(None, inputs)[0]
-        return outputs, input_text
+        # Model directory containing Clarifai config.yaml
+        model_path = os.path.dirname(os.path.dirname(__file__))
+
+        # ModelBuilder handles:
+        # - reading model config
+        # - checkpoint resolution
+        # - conditional downloading
+        builder = ModelBuilder(model_path, download_validation_only=True)
+
+        # Stage indicates when checkpoints should be fetched
+        # Possible values: "build", "runtime", etc.
+        stage = builder.config["checkpoints"]["when"]
+
+        # Default checkpoint reference (usually HuggingFace repo ID)
+        checkpoints = builder.config["checkpoints"]["repo_id"]
+
+        if stage in ["build", "runtime"]:
+            checkpoints = builder.download_checkpoints(stage=stage)
+
+        # Start vLLM OpenAI-compatible server
+        self.server = vllm_openai_server(checkpoints, **server_args)
+
+        # OpenAI client
+        self.client = OpenAI(
+            api_key="notset",
+            base_url=f"http://{self.server.host}:{self.server.port}/v1",
+        )
+
+        # Retrieve the model ID exposed by vLLM
+        # vLLM dynamically registers models at runtime
+        self.model = self.client.models.list().data[0].id
+        logger.info(f"Loaded embedding model: {self.model}")
 
     @OpenAIModelClass.method
-    def predict(self,
-                input: str,) -> List[float]:
+    def predict(
+        self,
+        texts: List[str],
+        ) -> List[List[float]]:
         """
-        Predict method to process the input text and return the embedding vector.
-        
-        Args:
-            input (str): The input text to be processed.
-        
-        Returns:
-            List[float]: The embedding vector for the input text.
-       """
-        # Tokenize and embed the input text
-        outputs, input_text = self.tokenize_and_embed(input)
-        
-        # Apply mean pooling and normalization to the model outputs
-        embeddings = mean_pooling(outputs, input_text["attention_mask"])
-        embeddings = embeddings / np.linalg.norm(embeddings, ord=2, axis=1, keepdims=True)
-        
-        return embeddings[0].tolist()
+        Generate embeddings for input texts.
+        """
+        # Call the OpenAI-compatible embeddings endpoint
+        resp = self.client.embeddings.create(
+            model=self.model,
+            input=texts,
+        )
+
+        # If token usage information is available,
+        # report it back to Clarifai for metering & observability
+        if resp.usage:
+            self.set_output_context(
+                prompt_tokens=resp.usage.prompt_tokens,
+                completion_tokens=1, # embeddings endpoint has no completion tokens, 1 added for consistency
+            )
+        # Extract and return embeddings
+        return [d.embedding for d in resp.data]

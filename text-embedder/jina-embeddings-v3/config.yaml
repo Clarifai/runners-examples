@@ -5,13 +5,17 @@ model:
   model_type_id: "text-embedder"
 
 build_info:
-  python_version: "3.11"
+  python_version: "3.12"
 
 inference_compute_info:
-  cpu_limit: "1"
-  cpu_memory: "5Gi"
-  num_accelerators: 0
+  accelerator_memory: 10Gi
+  accelerator_type:
+  - NVIDIA-*
+  cpu_limit: "3"
+  cpu_memory: "10Gi"
+  num_accelerators: 1
 
 checkpoints:
   type: "huggingface"
   repo_id: "jinaai/jina-embeddings-v3"
+  when: runtime
