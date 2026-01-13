@@ -71,15 +71,15 @@ class OPENAI_GPT_4o(AgenticModelClass):
         try:
             response_data = json.loads(response_json)
             # Extract content from response
-            if "choices" in response_data and len(response_data["choices"]) > 0:
+            if response_data.get("choices") and len(response_data["choices"]) > 0:
                 message = response_data["choices"][0].get("message", {})
                 content = message.get("content", "")
-                return content if content else ""
+                return content
             else:
-                raise ValueError("Invalid response format: missing choices")
+                raise ValueError("Failed to get response from the Model")
                 
         except Exception as e:
-            raise Exception(f"Failed to get response: {e}")
+            raise Exception(f"Failed to get response from the Model: {e}")
     
     @AgenticModelClass.method
     def generate(self,
@@ -121,14 +121,12 @@ class OPENAI_GPT_4o(AgenticModelClass):
         response_json = self.openai_stream_transport(request_json)
         for chunk in response_json:
             chunk_json = json.loads(chunk)
-            if "choices" in chunk_json and len(chunk_json["choices"]) > 0:
+            if chunk_json and chunk_json.get("choices") and len(chunk_json["choices"]) > 0:
                 choice = chunk_json["choices"][0]
-                if "delta" in choice and "content" in choice["delta"]:
+                if choice and choice.get("delta") and choice["delta"].get("content"):
                     yield choice["delta"]["content"]
-                elif "delta" in choice and "reasoning_content" in choice["delta"]:
+                elif choice and choice.get("delta") and choice["delta"].get("reasoning_content"):
                     yield choice["delta"]["reasoning_content"]
                 else:
                     yield ""
-            else:
-                yield ""
         yield ""

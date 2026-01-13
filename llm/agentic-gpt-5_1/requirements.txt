@@ -1,5 +1,5 @@
 openai==1.81.0
-clarifai==11.12.1rc4
+clarifai==12.1.4
 anyio
 mcp==1.9.0
 fastmcp==2.3.4
