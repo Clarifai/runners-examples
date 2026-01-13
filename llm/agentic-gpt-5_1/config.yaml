@@ -1,0 +1,11 @@
+model:
+  id: gpt-5_1
+  app_id: app_id
+  user_id: user_id
+  model_type_id: multimodal-to-text
+build_info:
+  python_version: '3.12'
+inference_compute_info:
+  cpu_limit: '1'
+  cpu_memory: 500Mi
+  num_accelerators: 0
