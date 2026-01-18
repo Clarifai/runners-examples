@@ -12,8 +12,8 @@ from transformers import DetrForObjectDetection, DetrImageProcessor
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.visual_detector_class import VisualDetectorClass
 from clarifai.runners.utils.data_types import Image, Video, Region, Frame
+from clarifai.runners.utils.data_utils import Param
 from clarifai.utils.logging import logger
-
 
 def detect_objects(
     images: List[PILImage],
@@ -54,46 +54,82 @@ class MyRunner(VisualDetectorClass):
         self.model = DetrForObjectDetection.from_pretrained(checkpoint_path).to(self.device)
         self.processor = DetrImageProcessor.from_pretrained(checkpoint_path)
         self.model.eval()
-        self.threshold = 0.9
         self.model_labels = self.model.config.id2label
 
         logger.info("Done loading!")
 
     @VisualDetectorClass.method
-    def predict(self, image: Image) -> List[Region]:
+    def predict(
+        self, 
+        image: Image, 
+        threshold: float = Param(
+            default=0.9, 
+            min_value=0.,
+            max_value=1.,
+            description="This determines the minimum probability score an object detector's prediction must have to be considered a valid detection.",
+            )
+    ) -> List[Region]:
         """Process a single image and return detected objects."""
         image_bytes = image.bytes
         image = VisualDetectorClass.preprocess_image(image_bytes)
         
         with torch.no_grad():
             results = detect_objects([image], self.model, self.processor, self.device)
-            outputs = VisualDetectorClass.process_detections(results, self.threshold, self.model_labels)
+            outputs = VisualDetectorClass.process_detections(
+                results, threshold, self.model_labels)
             return outputs[0]  # Return detections for single image
 
     @VisualDetectorClass.method
-    def generate(self, video: Video) -> Iterator[Frame]:
+    def generate(
+        self, 
+        video: Video,
+        threshold: float = Param(
+            default=0.9,
+            min_value=0.,
+            max_value=1.,
+            description="This determines the minimum probability score an object detector's prediction must have to be considered a valid detection.",
+        )
+    ) -> Iterator[Frame]:
         """Process video frames and yield detected objects for each frame."""
         frame_generator = VisualDetectorClass.video_to_frames(video.bytes)
         for frame in frame_generator:
             with torch.no_grad():
                 image = VisualDetectorClass.preprocess_image(frame.image.bytes)
                 results = detect_objects([image], self.model, self.processor, self.device)
-                outputs = VisualDetectorClass.process_detections(results, self.threshold, self.model_labels)
+                outputs = VisualDetectorClass.process_detections(results, threshold, self.model_labels)
                 frame.regions = outputs[0]  # Assign detections to the frame
                 yield frame  # Yield the frame with detections
 
     @VisualDetectorClass.method
-    def stream_image(self, image_stream: Iterator[Image]) -> Iterator[List[Region]]:
+    def stream_image(
+        self, 
+        image_stream: Iterator[Image],
+        threshold: float = Param(
+            default=0.9,
+            min_value=0.,
+            max_value=1.,
+            description="This determines the minimum probability score an object detector's prediction must have to be considered a valid detection.",
+        )
+    ) -> Iterator[List[Region]]:
         """Stream process image inputs."""
         for image in image_stream:
-            result = self.predict(image)
+            result = self.predict(image, threshold=threshold)
             yield result
 
     @VisualDetectorClass.method
-    def stream_video(self, video_stream: Iterator[Video]) -> Iterator[Frame]:
+    def stream_video(
+        self, 
+        video_stream: Iterator[Video],
+        threshold: float = Param(
+            default=0.9,
+            min_value=0.,
+            max_value=1.,
+            description="This determines the minimum probability score an object detector's prediction must have to be considered a valid detection.",
+        )
+    ) -> Iterator[Frame]:
         """Stream process video inputs."""
         for video in video_stream:
-            for frame_result in self.generate(video):
+            for frame_result in self.generate(video, threshold=threshold):
                 yield frame_result
         
     def test(self):
