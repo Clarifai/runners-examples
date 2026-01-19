@@ -13,11 +13,11 @@ from model import MyRunner
 
 # Configuration
 NUM_REQUESTS = 20  # More requests to see batching benefits
-IMAGE_SIZE = (1024, 1024)
+IMAGE_SIZE = (640, 640)
 BATCH_SIZES = [1, 2, 4, 8]
 
 
-def generate_test_image(size=(1024, 1024)):
+def generate_test_image(size=(640, 640)):
     """Generate a random test image with some shapes."""
     img_array = np.random.randint(0, 255, (size[1], size[0], 3), dtype=np.uint8)
     img_array[100:300, 100:300] = [255, 0, 0]

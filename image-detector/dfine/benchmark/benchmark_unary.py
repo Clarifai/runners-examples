@@ -9,13 +9,13 @@ from clarifai.client.model import Model
 
 # Configuration
 NUM_REQUESTS = 10
-IMAGE_SIZE = (1024, 1024)
+IMAGE_SIZE = (640, 640)
 USER_ID = "arman"
 APP_ID = "local-runner-app"
 MODEL_ID = "local-runner-model"
 
 
-def generate_test_image(size=(1024, 1024)):
+def generate_test_image(size=(640, 640)):
     """Generate a random test image with some shapes."""
     # Create a random RGB image
     img_array = np.random.randint(0, 255, (size[1], size[0], 3), dtype=np.uint8)

@@ -9,7 +9,7 @@
 # | XLarge  | ustc-community/dfine-xlarge-coco          | ~59%  |  ~78 FPS |
 
 model:
-  id: DFine-small-nms
+  id: dfine-small-obj2coco
   # id: DFine-medium-nms
   # id: DFine-large-nms
   # id: DFine-xlarge-nms
@@ -19,8 +19,8 @@ model:
 build_info:
   python_version: '3.11'
 inference_compute_info:
-  cpu_limit: '4'
-  cpu_memory: 2Gi
+  cpu_limit: '8'
+  cpu_memory: 10Gi
   num_accelerators: 1
   accelerator_type:
   - NVIDIA-*
@@ -28,6 +28,7 @@ inference_compute_info:
 checkpoints:
   type: huggingface
   repo_id: ustc-community/dfine-small-obj2coco
+  when: runtime
   # repo_id: ustc-community/dfine-medium-obj2coco
   # repo_id: ustc-community/dfine-large-obj2coco-e25
   # repo_id: ustc-community/dfine-xlarge-coco

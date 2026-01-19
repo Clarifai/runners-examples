@@ -28,7 +28,7 @@ python benchmark_api_stream.py
 python benchmark_api_unary.py
 ```
 
-## Current Results (1024x1024 images, 100 requests)
+## Current Results (640x640 images, 100 requests)
 
 | Benchmark Type | FPS | Avg Latency | Notes |
 |----------------|-----|-------------|-------|
@@ -70,7 +70,7 @@ Forcefully stops all running Clarifai runner processes.
 ## Benchmark Details
 
 ### Configuration
-- **Image Size**: 1024x1024
+- **Image Size**: 640x640 (native D-FINE resolution)
 - **Number of Requests**: 100 (for statistical reliability)
 - **Model**: ustc-community/dfine-small-obj2coco
 - **Device**: CUDA (GPU - NVIDIA A10)
@@ -97,7 +97,7 @@ runner.stream_image(frames, batch_size=4)  # 35.46 FPS, 73ms wait
 Edit the configuration at the top of each script:
 ```python
 NUM_REQUESTS = 100  # Change number of test images
-IMAGE_SIZE = (1024, 1024)  # Change image dimensions
+IMAGE_SIZE = (640, 640)  # Change image dimensions (640x640 is D-FINE native)
 ```
 
 ## Advanced Benchmarks

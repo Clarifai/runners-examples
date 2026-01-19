@@ -12,14 +12,14 @@ from clarifai_grpc.grpc.api.status import status_code_pb2
 
 # Configuration
 NUM_REQUESTS = 100
-IMAGE_SIZE = (1024, 1024)
+IMAGE_SIZE = (640, 640)
 MODEL_URL = "https://clarifai.com/arman/local-runner-app/models/local-runner-model"
 
 # Get PAT from environment
 PAT = os.environ.get("CLARIFAI_PAT", "")
 
 
-def generate_test_image(size=(1024, 1024)):
+def generate_test_image(size=(640, 640)):
     """Generate a random test image with some shapes."""
     # Create a random RGB image
     img_array = np.random.randint(0, 255, (size[1], size[0], 3), dtype=np.uint8)
