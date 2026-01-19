@@ -1,53 +1,36 @@
 # Standard library imports
 import os
-import tempfile
-import time
-from io import BytesIO
 from typing import List, Dict, Any, Iterator
 
 # Third-party imports
-import cv2
 import torch
 from PIL import Image as PILImage
 from transformers import DFineForObjectDetection, AutoImageProcessor
 from torchvision.ops import nms
 
 # Clarifai imports
-from clarifai.runners.models.model_class import ModelClass
 from clarifai.runners.models.model_builder import ModelBuilder
-from clarifai.runners.utils.data_types import Concept, Image, Video, Region
-from clarifai.utils.logging import logger
+from clarifai.runners.models.visual_detector_class import VisualDetectorClass
+from clarifai.runners.utils.data_types import Image, Video, Region, Frame, Concept
 from clarifai.runners.utils.data_utils import Param
-
-THRESHOLD = 0.25
-IOU_THRESHOLD = 0.2
-
-def preprocess_image(image_bytes: bytes) -> PILImage:
-    """Convert image bytes into RGB format suitable for model processing.
-
-    Args:
-        image_bytes: Raw image data in bytes format
-
-    Returns:
-        PIL Image object in RGB format ready for model input
-    """
-    return PILImage.open(BytesIO(image_bytes)).convert("RGB")
+from clarifai.utils.logging import logger
 
 
 def detect_objects(
-    images: List[PILImage],
+    images: List[PILImage.Image],
     model: DFineForObjectDetection,
     processor: AutoImageProcessor,
     device: str,
-    threshold:float = THRESHOLD
-) -> Dict[str, Any]:
-    """Process images through the DETR model to detect objects.
+    threshold: float = 0.25
+) -> List[Dict[str, Any]]:
+    """Process images through the D-Fine model to detect objects.
 
     Args:
-        images: List of preprocessed images
-        model: DETR model instance
-        processor: Image processor for DETR
+        images: List of preprocessed PIL images
+        model: D-Fine model instance
+        processor: Image processor for D-Fine
         device: Computation device (CPU/GPU)
+        threshold: Confidence threshold for detections
 
     Returns:
         Detection results from the model
@@ -59,29 +42,25 @@ def detect_objects(
     return results
 
 
-
-def process_detections(
+def process_detections_with_nms(
     results: List[Dict[str, torch.Tensor]],
-    images: List[PILImage],
     model_labels: Dict[int, str],
-    iou_threshold: float = IOU_THRESHOLD,
+    iou_threshold: float = 0.2,
     use_nms: bool = True
 ) -> List[List[Region]]:
     """Convert model outputs into a structured format of detections, with optional NMS.
 
     Args:
         results: Raw detection results from model
-        images: Original input images
         model_labels: Dictionary mapping label indices to names
-        nms_iou_threshold: IoU threshold for non-maximum suppression
+        iou_threshold: IoU threshold for non-maximum suppression
         use_nms: Whether to apply non-maximum suppression
 
     Returns:
         List of lists containing Region objects for each detection
     """
     outputs = []
-    for i, result in enumerate(results):
-        image = images[i]
+    for result in results:
         detections = []
 
         boxes = result["boxes"]
@@ -89,7 +68,7 @@ def process_detections(
         labels = result["labels"]
 
         # Apply NMS if enabled
-        if use_nms:
+        if use_nms and len(boxes) > 0:
             keep = nms(boxes, scores, iou_threshold)
             boxes = boxes[keep]
             scores = scores[keep]
@@ -109,136 +88,153 @@ def process_detections(
     return outputs
 
 
-def video_to_frames(video_bytes: bytes) -> Iterator[bytes]:
-    """Convert video bytes to frames.
-
-    Args:
-        video_bytes: Raw video data in bytes
-
-    Yields:
-        JPEG encoded frame data as bytes
-    """
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
-        temp_video_file.write(video_bytes)
-        temp_video_path = temp_video_file.name
-        logger.info(f"temp_video_path: {temp_video_path}")
-
-        video = cv2.VideoCapture(temp_video_path)
-        logger.info(f"video opened: {video.isOpened()}")
-        
-        while video.isOpened():
-            ret, frame = video.read()
-            if not ret:
-                break
-            frame_bytes = cv2.imencode('.jpg', frame)[1].tobytes()
-            yield frame_bytes
-            
-        video.release()
-        os.unlink(temp_video_path)
-
-
-class MyRunner(ModelClass):
-    """A custom runner for DETR object detection model that processes images and videos"""
+class MyRunner(VisualDetectorClass):
+    """A custom runner for D-Fine object detection model that processes images and videos."""
 
     def load_model(self):
-        """Load the model here."""
+        """Load the D-Fine model and processor."""
+        model_path = os.path.dirname(os.path.dirname(__file__))
+        builder = ModelBuilder(model_path, download_validation_only=True)
+        checkpoint_path = builder.download_checkpoints(stage="runtime")
+
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         logger.info(f"Running on device: {self.device}")
-        checkpoint_path = "ustc-community/dfine-large-obj2coco-e25"
-        
+
         self.model = DFineForObjectDetection.from_pretrained(checkpoint_path).to(self.device)
         self.processor = AutoImageProcessor.from_pretrained(checkpoint_path)
         self.model.eval()
         self.model_labels = self.model.config.id2label
 
-        logger.info("Done loading!")
+        logger.info("Done loading D-Fine model!")
 
-    @ModelClass.method 
+    @VisualDetectorClass.method
     def predict(
-        self, 
-        image: Image, 
-        conf_threshold: float = Param(
-            description="The `confidence threshold` value specifies the minimum confidence required for a result to be accepted or considered valid.",
-            default=THRESHOLD,
+        self,
+        image: Image,
+        threshold: float = Param(
+            default=0.25,
+            min_value=0.,
+            max_value=1.,
+            description="Minimum confidence score required for a detection to be considered valid.",
         ),
         use_nms: bool = Param(
-            description="Enable non-maximum suppression.",
             default=True,
+            description="Enable non-maximum suppression to reduce overlapping detections.",
         ),
         iou_threshold: float = Param(
-            description="IoU threshold for non-maximum suppression, only applicable when use_nms=True",
-            default=IOU_THRESHOLD,
+            default=0.2,
+            min_value=0.,
+            max_value=1.,
+            description="IoU threshold for non-maximum suppression (only used when use_nms=True).",
         )
     ) -> List[Region]:
         """Process a single image and return detected objects."""
-        image_bytes = image.bytes
-        image = preprocess_image(image_bytes)
-        logger.info(f"Recieved image: {image}")
+        pil_image = VisualDetectorClass.preprocess_image(image.bytes)
+
         with torch.no_grad():
-            results = detect_objects([image], self.model, self.processor, self.device, threshold=conf_threshold)
-            outputs = process_detections(results, [image], self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms)
-            return outputs[0]  # Return detections for single image
+            results = detect_objects(
+                [pil_image], self.model, self.processor, self.device, threshold=threshold
+            )
+            outputs = process_detections_with_nms(
+                results, self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+            )
+            return outputs[0]
 
-
-    @ModelClass.method
+    @VisualDetectorClass.method
     def generate(
-        self, 
+        self,
         video: Video,
-        conf_threshold: float = Param(
-            description="The `confidence threshold` value specifies the minimum confidence required for a result to be accepted or considered valid.",
-            default=THRESHOLD,
+        threshold: float = Param(
+            default=0.25,
+            min_value=0.,
+            max_value=1.,
+            description="Minimum confidence score required for a detection to be considered valid.",
         ),
         use_nms: bool = Param(
-            description="Enable non-maximum suppression.",
             default=True,
+            description="Enable non-maximum suppression to reduce overlapping detections.",
         ),
         iou_threshold: float = Param(
-            description="IoU threshold for non-maximum suppression, only applicable when use_nms=True",
-            default=IOU_THRESHOLD,
+            default=0.2,
+            min_value=0.,
+            max_value=1.,
+            description="IoU threshold for non-maximum suppression (only used when use_nms=True).",
         )
-    ) -> Iterator[List[Region]]:
+    ) -> Iterator[Frame]:
         """Process video frames and yield detected objects for each frame."""
-        video_bytes = video.bytes
-        frame_generator = video_to_frames(video_bytes)
+        frame_generator = VisualDetectorClass.video_to_frames(video.bytes)
         for frame in frame_generator:
-            image = preprocess_image(frame)
             with torch.no_grad():
-                results = detect_objects([image], self.model, self.processor, self.device, threshold=conf_threshold, )
-                outputs = process_detections(results, [image], self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms)
-                yield outputs[0]  # Yield detections for each frame
+                pil_image = VisualDetectorClass.preprocess_image(frame.image.bytes)
+                results = detect_objects(
+                    [pil_image], self.model, self.processor, self.device, threshold=threshold
+                )
+                outputs = process_detections_with_nms(
+                    results, self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                )
+                frame.regions = outputs[0]
+                yield frame
 
-
-    @ModelClass.method
-    def stream(
-        self, 
-        images: Iterator[Image],
-        conf_threshold: float = Param(
-            description="The `confidence threshold` value specifies the minimum confidence required for a result to be accepted or considered valid.",
-            default=THRESHOLD,
+    @VisualDetectorClass.method
+    def stream_image(
+        self,
+        image_stream: Iterator[Image],
+        threshold: float = Param(
+            default=0.25,
+            min_value=0.,
+            max_value=1.,
+            description="Minimum confidence score required for a detection to be considered valid.",
         ),
         use_nms: bool = Param(
-            description="Enable non-maximum suppression.",
             default=True,
+            description="Enable non-maximum suppression to reduce overlapping detections.",
         ),
         iou_threshold: float = Param(
-            description="IoU threshold for non-maximum suppression, only applicable when use_nms=True",
-            default=IOU_THRESHOLD,
+            default=0.2,
+            min_value=0.,
+            max_value=1.,
+            description="IoU threshold for non-maximum suppression (only used when use_nms=True).",
         )
     ) -> Iterator[List[Region]]:
         """Stream process image inputs."""
-        logger.info("Starting stream processing for images")
-        for image in images:
-            start_time = time.time()
-            result = self.predict(image, conf_threshold=conf_threshold, iou_threshold=iou_threshold, use_nms=use_nms)
+        for image in image_stream:
+            result = self.predict(
+                image, threshold=threshold, use_nms=use_nms, iou_threshold=iou_threshold
+            )
             yield result
-            logger.info(f"Processing time: {time.time() - start_time:.3f}s")
 
-        
+    @VisualDetectorClass.method
+    def stream_video(
+        self,
+        video_stream: Iterator[Video],
+        threshold: float = Param(
+            default=0.25,
+            min_value=0.,
+            max_value=1.,
+            description="Minimum confidence score required for a detection to be considered valid.",
+        ),
+        use_nms: bool = Param(
+            default=True,
+            description="Enable non-maximum suppression to reduce overlapping detections.",
+        ),
+        iou_threshold: float = Param(
+            default=0.2,
+            min_value=0.,
+            max_value=1.,
+            description="IoU threshold for non-maximum suppression (only used when use_nms=True).",
+        )
+    ) -> Iterator[Frame]:
+        """Stream process video inputs."""
+        for video in video_stream:
+            for frame_result in self.generate(
+                video, threshold=threshold, use_nms=use_nms, iou_threshold=iou_threshold
+            ):
+                yield frame_result
+
     def test(self):
         """Test the model functionality."""
-        import requests  # Import moved here as it's only used for testing
-        
-        # Test configuration
+        import requests
+
         TEST_URLS = {
             "images": [
                 "https://samples.clarifai.com/metro-north.jpg",
@@ -247,7 +243,7 @@ class MyRunner(ModelClass):
             "video": "https://samples.clarifai.com/beer.mp4"
         }
 
-        def get_test_data(url):
+        def get_test_image(url):
             return Image(bytes=requests.get(url).content)
 
         def get_test_video():
@@ -261,29 +257,31 @@ class MyRunner(ModelClass):
             except Exception as e:
                 logger.error(f"Error in {name} test: {e}")
 
-        # Test predict
         def test_predict():
-            result = self.predict(get_test_data(TEST_URLS["images"][0]))
+            result = self.predict(get_test_image(TEST_URLS["images"][0]))
             logger.info(f"Predict result: {result}")
 
-        # Test generate
         def test_generate():
-            for detections in self.generate(get_test_video()):
-                logger.info(f"First frame detections: {detections}")
+            for frame in self.generate(get_test_video()):
+                logger.info(f"First frame detections: {frame.regions}")
                 break
 
-        # Test stream
         def test_stream():
-            # Split into two separate test functions for clarity
             def test_stream_image():
-                images = [get_test_data(url) for url in TEST_URLS["images"]]
-                for result in self.stream(iter(images)):
+                images = [get_test_image(url) for url in TEST_URLS["images"]]
+                for result in self.stream_image(iter(images)):
                     logger.info(f"Image stream result: {result}")
+
+            def test_stream_video():
+                for frame in self.stream_video(iter([get_test_video()])):
+                    logger.info(f"Video stream result: {frame.regions}")
+                    break
 
             logger.info("\nTesting image streaming...")
             test_stream_image()
+            logger.info("\nTesting video streaming...")
+            test_stream_video()
 
-        # Run all tests
         for test_name, test_fn in [
             ("predict", test_predict),
             ("generate", test_generate),
