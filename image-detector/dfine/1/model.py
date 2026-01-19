@@ -1,5 +1,8 @@
 # Standard library imports
 import os
+import signal
+import sys
+from io import BytesIO
 from typing import List, Dict, Any, Iterator, Optional
 
 # Third-party imports
@@ -14,6 +17,17 @@ from clarifai.runners.models.visual_detector_class import VisualDetectorClass
 from clarifai.runners.utils.data_types import Image, Video, Region, Frame, Concept
 from clarifai.runners.utils.data_utils import Param
 from clarifai.utils.logging import logger
+
+
+def signal_handler(sig, frame):
+    """Handle SIGINT and SIGTERM signals for graceful shutdown."""
+    logger.info("\nReceived interrupt signal. Shutting down gracefully...")
+    sys.exit(0)
+
+
+# Register signal handlers
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 
 def detect_objects(
@@ -93,7 +107,7 @@ class MyRunner(VisualDetectorClass):
         logger.info(f"Initializing model on device: {self._device}")
 
         self._model = DFineForObjectDetection.from_pretrained(self._checkpoint_path).to(self._device)
-        self._processor = AutoImageProcessor.from_pretrained(self._checkpoint_path)
+        self._processor = AutoImageProcessor.from_pretrained(self._checkpoint_path, use_fast=True)
         self._model.eval()
         self._model_labels = self._model.config.id2label
 
@@ -122,7 +136,7 @@ class MyRunner(VisualDetectorClass):
     ) -> List[Region]:
         """Process a single image and return detected objects."""
         self._ensure_model_loaded()
-        pil_image = VisualDetectorClass.preprocess_image(image.bytes)
+        pil_image = PILImage.open(BytesIO(image.bytes)).convert("RGB")
 
         with torch.no_grad():
             results = detect_objects(
@@ -159,7 +173,7 @@ class MyRunner(VisualDetectorClass):
         frame_generator = VisualDetectorClass.video_to_frames(video.bytes)
         for frame in frame_generator:
             with torch.no_grad():
-                pil_image = VisualDetectorClass.preprocess_image(frame.image.bytes)
+                pil_image = PILImage.open(BytesIO(frame.image.bytes)).convert("RGB")
                 results = detect_objects(
                     [pil_image], self._model, self._processor, self._device, threshold=threshold
                 )
@@ -188,14 +202,53 @@ class MyRunner(VisualDetectorClass):
             min_value=0.,
             max_value=1.,
             description="IoU threshold for non-maximum suppression (only used when use_nms=True).",
+        ),
+        batch_size: int = Param(
+            default=1,
+            min_value=1,
+            max_value=32,
+            description="Number of images to batch together. Use 1 for lowest latency (real-time streaming), or higher (4-8) for maximum throughput (offline processing).",
         )
     ) -> Iterator[List[Region]]:
-        """Stream process image inputs."""
+        """Stream process image inputs.
+
+        For real-time streaming (live video): Use batch_size=1 for lowest latency.
+        For offline processing (maximum throughput): Use batch_size=4-8.
+
+        Batching increases throughput but adds latency in streaming scenarios.
+        """
+        self._ensure_model_loaded()
+
+        batch = []
         for image in image_stream:
-            result = self.predict(
-                image, threshold=threshold, use_nms=use_nms, iou_threshold=iou_threshold
-            )
-            yield result
+            pil_image = PILImage.open(BytesIO(image.bytes)).convert("RGB")
+            batch.append(pil_image)
+
+            # Process batch when it reaches batch_size
+            if len(batch) >= batch_size:
+                with torch.no_grad():
+                    results = detect_objects(
+                        batch, self._model, self._processor, self._device, threshold=threshold
+                    )
+                    outputs = process_detections_with_nms(
+                        results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                    )
+                    # Yield each result individually
+                    for output in outputs:
+                        yield output
+                batch = []
+
+        # Process remaining images in the last partial batch
+        if batch:
+            with torch.no_grad():
+                results = detect_objects(
+                    batch, self._model, self._processor, self._device, threshold=threshold
+                )
+                outputs = process_detections_with_nms(
+                    results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                )
+                for output in outputs:
+                    yield output
 
     @VisualDetectorClass.method
     def stream_video(
