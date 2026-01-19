@@ -359,11 +359,14 @@ class MyRunner(VisualDetectorClass):
         self._use_tensorrt: bool = False
 
     def load_model(self):
-        """Download checkpoints only - defer CUDA initialization to avoid fork issues."""
+        """Download checkpoints and initialize model/TensorRT engine."""
         model_path = os.path.dirname(os.path.dirname(__file__))
         builder = ModelBuilder(model_path, download_validation_only=True)
         self._checkpoint_path = builder.download_checkpoints(stage="runtime")
         logger.info(f"Checkpoints ready at: {self._checkpoint_path}")
+
+        # Eagerly load model/TensorRT engine at startup
+        self._ensure_model_loaded()
 
     def _ensure_model_loaded(self):
         """Lazy load model on first use - called from worker process after fork."""
@@ -385,7 +388,7 @@ class MyRunner(VisualDetectorClass):
 
         # Try TensorRT if available and on CUDA
         if TENSORRT_AVAILABLE and self._device == 'cuda':
-            # Check if engine exists, or build from ONNX
+            # Build TensorRT engine from ONNX if not exists
             if not os.path.exists(engine_path) and os.path.exists(onnx_path):
                 try:
                     logger.info("TensorRT engine not found, building from ONNX...")

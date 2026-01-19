@@ -18,6 +18,7 @@ model:
   model_type_id: visual-detector
 build_info:
   python_version: '3.11'
+num_threads: 1
 inference_compute_info:
   cpu_limit: '8'
   cpu_memory: 10Gi
