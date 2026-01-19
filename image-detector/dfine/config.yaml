@@ -13,8 +13,8 @@ model:
   # id: DFine-medium-nms
   # id: DFine-large-nms
   # id: DFine-xlarge-nms
-  user_id:
-  app_id:
+  user_id: arman
+  app_id: image-detector
   model_type_id: visual-detector
 build_info:
   python_version: '3.11'

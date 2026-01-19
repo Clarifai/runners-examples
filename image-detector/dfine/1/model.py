@@ -1,6 +1,6 @@
 # Standard library imports
 import os
-from typing import List, Dict, Any, Iterator
+from typing import List, Dict, Any, Iterator, Optional
 
 # Third-party imports
 import torch
@@ -23,18 +23,7 @@ def detect_objects(
     device: str,
     threshold: float = 0.25
 ) -> List[Dict[str, Any]]:
-    """Process images through the D-Fine model to detect objects.
-
-    Args:
-        images: List of preprocessed PIL images
-        model: D-Fine model instance
-        processor: Image processor for D-Fine
-        device: Computation device (CPU/GPU)
-        threshold: Confidence threshold for detections
-
-    Returns:
-        Detection results from the model
-    """
+    """Process images through the D-Fine model to detect objects."""
     model_inputs = processor(images=images, return_tensors="pt").to(device)
     model_inputs = {name: tensor.to(device) for name, tensor in model_inputs.items()}
     model_output = model(**model_inputs)
@@ -48,17 +37,7 @@ def process_detections_with_nms(
     iou_threshold: float = 0.2,
     use_nms: bool = True
 ) -> List[List[Region]]:
-    """Convert model outputs into a structured format of detections, with optional NMS.
-
-    Args:
-        results: Raw detection results from model
-        model_labels: Dictionary mapping label indices to names
-        iou_threshold: IoU threshold for non-maximum suppression
-        use_nms: Whether to apply non-maximum suppression
-
-    Returns:
-        List of lists containing Region objects for each detection
-    """
+    """Convert model outputs into a structured format of detections, with optional NMS."""
     outputs = []
     for result in results:
         detections = []
@@ -67,7 +46,6 @@ def process_detections_with_nms(
         scores = result["scores"]
         labels = result["labels"]
 
-        # Apply NMS if enabled
         if use_nms and len(boxes) > 0:
             keep = nms(boxes, scores, iou_threshold)
             boxes = boxes[keep]
@@ -91,21 +69,35 @@ def process_detections_with_nms(
 class MyRunner(VisualDetectorClass):
     """A custom runner for D-Fine object detection model that processes images and videos."""
 
+    def __init__(self):
+        super().__init__()
+        self._model: Optional[DFineForObjectDetection] = None
+        self._processor: Optional[AutoImageProcessor] = None
+        self._model_labels: Optional[Dict[int, str]] = None
+        self._device: Optional[str] = None
+        self._checkpoint_path: Optional[str] = None
+
     def load_model(self):
-        """Load the D-Fine model and processor."""
+        """Download checkpoints only - defer CUDA initialization to avoid fork issues."""
         model_path = os.path.dirname(os.path.dirname(__file__))
         builder = ModelBuilder(model_path, download_validation_only=True)
-        checkpoint_path = builder.download_checkpoints(stage="runtime")
+        self._checkpoint_path = builder.download_checkpoints(stage="runtime")
+        logger.info(f"Checkpoints ready at: {self._checkpoint_path}")
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        logger.info(f"Running on device: {self.device}")
+    def _ensure_model_loaded(self):
+        """Lazy load model on first use - called from worker process after fork."""
+        if self._model is not None:
+            return
 
-        self.model = DFineForObjectDetection.from_pretrained(checkpoint_path).to(self.device)
-        self.processor = AutoImageProcessor.from_pretrained(checkpoint_path)
-        self.model.eval()
-        self.model_labels = self.model.config.id2label
+        self._device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        logger.info(f"Initializing model on device: {self._device}")
 
-        logger.info("Done loading D-Fine model!")
+        self._model = DFineForObjectDetection.from_pretrained(self._checkpoint_path).to(self._device)
+        self._processor = AutoImageProcessor.from_pretrained(self._checkpoint_path)
+        self._model.eval()
+        self._model_labels = self._model.config.id2label
+
+        logger.info("D-Fine model loaded successfully!")
 
     @VisualDetectorClass.method
     def predict(
@@ -129,14 +121,15 @@ class MyRunner(VisualDetectorClass):
         )
     ) -> List[Region]:
         """Process a single image and return detected objects."""
+        self._ensure_model_loaded()
         pil_image = VisualDetectorClass.preprocess_image(image.bytes)
 
         with torch.no_grad():
             results = detect_objects(
-                [pil_image], self.model, self.processor, self.device, threshold=threshold
+                [pil_image], self._model, self._processor, self._device, threshold=threshold
             )
             outputs = process_detections_with_nms(
-                results, self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
             )
             return outputs[0]
 
@@ -162,15 +155,16 @@ class MyRunner(VisualDetectorClass):
         )
     ) -> Iterator[Frame]:
         """Process video frames and yield detected objects for each frame."""
+        self._ensure_model_loaded()
         frame_generator = VisualDetectorClass.video_to_frames(video.bytes)
         for frame in frame_generator:
             with torch.no_grad():
                 pil_image = VisualDetectorClass.preprocess_image(frame.image.bytes)
                 results = detect_objects(
-                    [pil_image], self.model, self.processor, self.device, threshold=threshold
+                    [pil_image], self._model, self._processor, self._device, threshold=threshold
                 )
                 outputs = process_detections_with_nms(
-                    results, self.model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                    results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
                 )
                 frame.regions = outputs[0]
                 yield frame
