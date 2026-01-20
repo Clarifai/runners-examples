@@ -347,7 +347,7 @@ def process_detections_with_nms(
             detections.append(
                 Region(
                     box=box.tolist(),
-                    concepts=[Concept(id=label, name=label, value=score.item())]
+                    concepts=[Concept(name=label, value=score.item())]
                 )
             )
 
