@@ -260,10 +260,6 @@ def detect_objects_tensorrt(
     batch_size = logits.shape[0]
 
     for i in range(batch_size):
-        # Get image size for denormalization
-        img = images[i]
-        img_width, img_height = img.size
-
         # Get predictions for this image
         img_logits = logits[i]  # (num_queries, num_classes)
         img_boxes = pred_boxes[i]  # (num_queries, 4) in [cx, cy, w, h] normalized
@@ -285,9 +281,8 @@ def detect_objects_tensorrt(
         # Convert from center format to corners format
         boxes = center_to_corners_format(boxes)
 
-        # Denormalize boxes to pixel coordinates
-        boxes[:, [0, 2]] *= img_width
-        boxes[:, [1, 3]] *= img_height
+        # Clamp boxes to [0, 1] range (keep normalized coordinates for Clarifai API)
+        boxes = boxes.clamp(0, 1)
 
         results.append({
             "scores": scores,
@@ -310,6 +305,19 @@ def detect_objects(
     model_inputs = {name: tensor.to(device) for name, tensor in model_inputs.items()}
     model_output = model(**model_inputs)
     results = processor.post_process_object_detection(model_output, threshold=threshold)
+
+    # Normalize boxes to [0, 1] range for Clarifai API
+    for i, (result, img) in enumerate(zip(results, images)):
+        img_width, img_height = img.size
+        boxes = result["boxes"]
+        if len(boxes) > 0:
+            # Convert pixel coordinates to normalized coordinates
+            boxes[:, [0, 2]] /= img_width
+            boxes[:, [1, 3]] /= img_height
+            # Clamp to [0, 1]
+            boxes = boxes.clamp(0, 1)
+            results[i]["boxes"] = boxes
+
     return results
 
 

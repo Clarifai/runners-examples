@@ -5,9 +5,39 @@
 - **Number of Requests**: 100 per test
 - **Model**: ustc-community/dfine-small-obj2coco
 - **Device**: CUDA (GPU - NVIDIA A10)
-- **Backend**: TensorRT FP16 (with PyTorch fallback)
+- **Backend**: TensorRT (with PyTorch fallback)
 
-## TensorRT FP16 Results (Current)
+## TensorRT FP32 Results (Current)
+
+### 1. LOCAL Stream-Stream
+**Command**: `python benchmark_local_stream.py`
+
+| Metric | Value |
+|--------|-------|
+| Avg Inter-arrival | 10.97ms |
+| Min Inter-arrival | 9.79ms |
+| Max Inter-arrival | 18.13ms |
+| Std Dev | 1.33ms |
+| **FPS** | **91.13** |
+| Overall Throughput | 90.93 images/s |
+| Time to First Result | 13.45ms |
+| Time to Last Result | 1099.75ms |
+
+### 2. LOCAL Unary-Unary (Direct Model Calls)
+**Command**: `python benchmark_direct.py`
+
+| Metric | Value |
+|--------|-------|
+| Average Latency | 11.86ms |
+| Min Latency | 10.25ms |
+| Max Latency | 49.15ms |
+| Std Dev | 4.26ms |
+| **FPS** | **84.35** |
+| Throughput | 84.30 req/s |
+
+---
+
+## TensorRT FP16 Results (Previous)
 
 ### 1. LOCAL Stream-Stream
 **Command**: `python benchmark_local_stream.py`
@@ -63,52 +93,60 @@
 
 ## Performance Summary
 
+### TensorRT FP32 vs FP16 Comparison (640x640, 100 requests)
+
+| Mode | TensorRT FP32 | TensorRT FP16 | Difference |
+|------|---------------|---------------|------------|
+| **LOCAL Stream** ⚡ | **91.13 FPS** | 71.43 FPS | **+28%** |
+| **LOCAL Unary** | **84.35 FPS** | 77.30 FPS | **+9%** |
+
+*Note: FP32 is faster than FP16 on this GPU (A10). FP16 also had numerical stability issues causing NaN outputs on some inputs.*
+
+### TensorRT FP32 vs PyTorch Comparison (640x640, 100 requests)
+
+| Mode | TensorRT FP32 FPS | PyTorch FPS | Speedup |
+|------|-------------------|-------------|---------|
+| **LOCAL Stream** ⚡ | **91.13** | 22.42 | **4.1x** |
+| **LOCAL Unary** | **84.35** | 20.89 | **4.0x** |
+| **API Stream** | TBD | 13.20 | - |
+| **API Unary** | TBD | 10.60 | - |
+
 ### TensorRT FP16 vs PyTorch Comparison (640x640, 100 requests)
 
-| Mode | TensorRT FPS | PyTorch FPS | Speedup |
-|------|--------------|-------------|---------|
-| **LOCAL Stream** ⚡ | **71.43** | 22.42 | **3.2x** |
-| **LOCAL Unary** | **77.30** | 20.89 | **3.7x** |
-| **API Stream** | **26.90** | 13.20 | **2.0x** |
-| **API Unary** | **23.17** | 10.60 | **2.2x** |
-
-### Raw TensorRT Inference (benchmark_tensorrt.py)
-
-| Metric | PyTorch FP32 | TensorRT FP16 |
-|--------|--------------|---------------|
-| Mean Latency | 18.29ms | 2.16ms |
-| **FPS** | 54.7 | **462.7** |
-| **Speedup** | 1x | **8.5x** |
-
-*Note: Raw inference measures only model forward pass, excluding pre/post-processing.*
+| Mode | TensorRT FP16 FPS | PyTorch FPS | Speedup |
+|------|-------------------|-------------|---------|
+| **LOCAL Stream** | 71.43 | 22.42 | **3.2x** |
+| **LOCAL Unary** | 77.30 | 20.89 | **3.7x** |
+| **API Stream** | 26.90 | 13.20 | **2.0x** |
+| **API Unary** | 23.17 | 10.60 | **2.2x** |
 
 ### Key Insights
 
-1. **TensorRT provides 3-4x speedup** for end-to-end local inference
-2. **API speedup is ~2x** (network overhead dominates)
-3. **Raw inference is 8.5x faster** with TensorRT FP16 (462 vs 55 FPS)
-4. **First-load penalty**: ~5 minutes to build TensorRT engine from ONNX (one-time)
+1. **TensorRT FP32 outperforms FP16** on NVIDIA A10 for this model
+2. **FP32 provides ~4x speedup** over PyTorch for end-to-end local inference
+3. **FP16 had stability issues** - NaN outputs on some inputs, so FP32 is recommended
+4. **First-load penalty**: ~2 minutes to build TensorRT engine from ONNX (one-time)
 
 ### Recommendations by Use Case
 
 | Use Case | Recommended Mode | FPS | Latency |
 |----------|------------------|-----|---------|
-| **Real-time streaming** | LOCAL Stream + TensorRT | 71.43 | 14ms |
-| **Maximum throughput** | LOCAL Unary + TensorRT | 77.30 | 13ms |
-| **API real-time** | API Stream + TensorRT | 26.90 | 37ms |
-| **API standard** | API Unary + TensorRT | 23.17 | 43ms |
+| **Real-time streaming** | LOCAL Stream + TensorRT FP32 | 91.13 | 11ms |
+| **Maximum throughput** | LOCAL Unary + TensorRT FP32 | 84.35 | 12ms |
+| **API real-time** | API Stream + TensorRT | TBD | TBD |
+| **API standard** | API Unary + TensorRT | TBD | TBD |
 
 ## TensorRT Setup
 
-The model automatically builds TensorRT engine from ONNX on first load:
+The model automatically builds TensorRT FP32 engine from ONNX on first load:
 
-1. **First request**: Builds engine (~5 min), then serves at full speed
+1. **First request**: Builds engine (~2 min), then serves at full speed
 2. **Subsequent requests**: Uses cached engine immediately
 3. **Fallback**: If TensorRT unavailable, uses PyTorch backend
 
 ### Files
 - `dfine.onnx` - ONNX model (included with model, 42MB)
-- `dfine.engine` - TensorRT engine (built at runtime, cached)
+- `dfine_fp32.engine` - TensorRT FP32 engine (built at runtime, cached)
 
 ### Benchmark Scripts
 - `benchmark_tensorrt.py` - Compare PyTorch vs TensorRT raw inference
