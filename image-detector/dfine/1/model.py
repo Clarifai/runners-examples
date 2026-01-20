@@ -7,7 +7,6 @@ from typing import List, Dict, Any, Iterator, Optional, Tuple
 
 # Third-party imports
 import torch
-import numpy as np
 from PIL import Image as PILImage
 from transformers import DFineForObjectDetection, AutoImageProcessor
 from torchvision.ops import nms
@@ -111,7 +110,6 @@ class TensorRTInference:
             shape = list(self.context.get_tensor_shape(name))
             # Handle dynamic dimensions
             shape[0] = batch_size
-            dtype = trt.nptype(self.engine.get_tensor_dtype(name))
             outputs[name] = torch.empty(shape, dtype=torch.float32, device="cuda").contiguous()
 
         # Set tensor addresses
@@ -249,9 +247,13 @@ def detect_objects_tensorrt(
     # Preprocess images
     inputs = processor(images=images, return_tensors="pt")
     pixel_values = inputs["pixel_values"].cuda()
+    logger.info(f"TRT input shape: {pixel_values.shape}, dtype: {pixel_values.dtype}")
 
     # Run TensorRT inference
     logits, pred_boxes = trt_engine(pixel_values)
+    logger.info(f"TRT output - logits shape: {logits.shape}, pred_boxes shape: {pred_boxes.shape}")
+    logger.info(f"TRT output - logits min/max: {logits.min().item():.4f}/{logits.max().item():.4f}")
+    logger.info(f"TRT output - pred_boxes min/max: {pred_boxes.min().item():.4f}/{pred_boxes.max().item():.4f}")
 
     # Post-process results
     results = []
@@ -272,6 +274,7 @@ def detect_objects_tensorrt(
         # Get max probability and class for each query (excluding background)
         # D-FINE uses last class as background
         scores, labels = probs[:, :-1].max(dim=-1)
+        logger.info(f"Post-softmax max score: {scores.max().item():.4f}, threshold: {threshold}")
 
         # Filter by threshold
         keep = scores > threshold
@@ -377,7 +380,7 @@ class MyRunner(VisualDetectorClass):
         logger.info(f"Initializing model on device: {self._device}")
 
         # Paths for TensorRT engine and ONNX model
-        engine_path = os.path.join(self._checkpoint_path, "dfine.engine")
+        engine_path = os.path.join(self._checkpoint_path, "dfine_fp32.engine")
         onnx_path = os.path.join(self._checkpoint_path, "dfine.onnx")
 
         # Also check for ONNX in the model directory (alongside model.py)
@@ -392,7 +395,8 @@ class MyRunner(VisualDetectorClass):
             if not os.path.exists(engine_path) and os.path.exists(onnx_path):
                 try:
                     logger.info("TensorRT engine not found, building from ONNX...")
-                    build_tensorrt_engine(onnx_path, engine_path, fp16=True)
+                    # Use FP32 - FP16 causes NaN outputs on some GPUs due to numerical instability
+                    build_tensorrt_engine(onnx_path, engine_path, fp16=False)
                 except Exception as e:
                     logger.warning(f"Failed to build TensorRT engine: {e}")
 
@@ -482,13 +486,17 @@ class MyRunner(VisualDetectorClass):
     ) -> List[Region]:
         """Process a single image and return detected objects."""
         self._ensure_model_loaded()
+        logger.info(f"predict() called, image bytes length: {len(image.bytes) if image.bytes else 0}")
         pil_image = PILImage.open(BytesIO(image.bytes)).convert("RGB")
+        logger.info(f"PIL image size: {pil_image.size}")
 
         with torch.no_grad():
             results = self._detect_objects([pil_image], threshold=threshold)
+            logger.info(f"Detection results: {len(results)} images, first has {len(results[0]['boxes'])} boxes")
             outputs = process_detections_with_nms(
                 results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
             )
+            logger.info(f"Returning {len(outputs[0])} regions")
             return outputs[0]
 
     @VisualDetectorClass.method
