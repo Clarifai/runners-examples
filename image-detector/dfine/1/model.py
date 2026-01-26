@@ -14,7 +14,7 @@ from torchvision.ops import nms
 # Clarifai imports
 from clarifai.runners.models.model_builder import ModelBuilder
 from clarifai.runners.models.visual_detector_class import VisualDetectorClass
-from clarifai.runners.utils.data_types import Image, Video, Region, Frame, Concept
+from clarifai.runners.utils.data_types import Image, Video, Region, Frame
 from clarifai.runners.utils.data_utils import Param
 from clarifai.utils.logging import logger
 
@@ -321,39 +321,28 @@ def detect_objects(
     return results
 
 
-def process_detections_with_nms(
+def apply_nms(
     results: List[Dict[str, torch.Tensor]],
-    model_labels: Dict[int, str],
-    iou_threshold: float = 0.2,
-    use_nms: bool = True
-) -> List[List[Region]]:
-    """Convert model outputs into a structured format of detections, with optional NMS."""
-    outputs = []
+    iou_threshold: float = 0.2
+) -> List[Dict[str, torch.Tensor]]:
+    """Apply non-maximum suppression to detection results."""
+    filtered_results = []
     for result in results:
-        detections = []
-
         boxes = result["boxes"]
         scores = result["scores"]
         labels = result["labels"]
 
-        if use_nms and len(boxes) > 0:
+        if len(boxes) > 0:
             keep = nms(boxes, scores, iou_threshold)
-            boxes = boxes[keep]
-            scores = scores[keep]
-            labels = labels[keep]
+            filtered_results.append({
+                "boxes": boxes[keep],
+                "scores": scores[keep],
+                "labels": labels[keep]
+            })
+        else:
+            filtered_results.append(result)
 
-        for score, label_idx, box in zip(scores, labels, boxes):
-            label = model_labels[label_idx.item()]
-            detections.append(
-                Region(
-                    box=box.tolist(),
-                    concepts=[Concept(name=label, value=score.item())]
-                )
-            )
-
-        outputs.append(detections)
-
-    return outputs
+    return filtered_results
 
 
 class MyRunner(VisualDetectorClass):
@@ -364,6 +353,7 @@ class MyRunner(VisualDetectorClass):
         self._model: Optional[DFineForObjectDetection] = None
         self._processor: Optional[AutoImageProcessor] = None
         self._model_labels: Optional[Dict[int, str]] = None
+        self._concepts_map: Optional[Dict[int, Dict[str, str]]] = None
         self._device: Optional[str] = None
         self._checkpoint_path: Optional[str] = None
         self._trt_engine: Optional[TensorRTInference] = None
@@ -374,6 +364,8 @@ class MyRunner(VisualDetectorClass):
         model_path = os.path.dirname(os.path.dirname(__file__))
         builder = ModelBuilder(model_path, download_validation_only=True)
         self._checkpoint_path = builder.download_checkpoints(stage="runtime")
+        # Load concepts from config.yaml for consistent IDs
+        self._concepts_map = VisualDetectorClass.load_concepts_from_config(model_path)
         logger.info(f"Checkpoints ready at: {self._checkpoint_path}")
 
         # Eagerly load model/TensorRT engine at startup
@@ -501,8 +493,10 @@ class MyRunner(VisualDetectorClass):
         with torch.no_grad():
             results = self._detect_objects([pil_image], threshold=threshold)
             logger.info(f"Detection results: {len(results)} images, first has {len(results[0]['boxes'])} boxes")
-            outputs = process_detections_with_nms(
-                results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+            if use_nms:
+                results = apply_nms(results, iou_threshold=iou_threshold)
+            outputs = VisualDetectorClass.process_detections(
+                results, threshold, self._model_labels, self._concepts_map
             )
             logger.info(f"Returning {len(outputs[0])} regions")
             return outputs[0]
@@ -535,8 +529,10 @@ class MyRunner(VisualDetectorClass):
             with torch.no_grad():
                 pil_image = PILImage.open(BytesIO(frame.image.bytes)).convert("RGB")
                 results = self._detect_objects([pil_image], threshold=threshold)
-                outputs = process_detections_with_nms(
-                    results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                if use_nms:
+                    results = apply_nms(results, iou_threshold=iou_threshold)
+                outputs = VisualDetectorClass.process_detections(
+                    results, threshold, self._model_labels, self._concepts_map
                 )
                 frame.regions = outputs[0]
                 yield frame
@@ -586,8 +582,10 @@ class MyRunner(VisualDetectorClass):
             if len(batch) >= batch_size:
                 with torch.no_grad():
                     results = self._detect_objects(batch, threshold=threshold)
-                    outputs = process_detections_with_nms(
-                        results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                    if use_nms:
+                        results = apply_nms(results, iou_threshold=iou_threshold)
+                    outputs = VisualDetectorClass.process_detections(
+                        results, threshold, self._model_labels, self._concepts_map
                     )
                     # Yield each result individually
                     for output in outputs:
@@ -598,8 +596,10 @@ class MyRunner(VisualDetectorClass):
         if batch:
             with torch.no_grad():
                 results = self._detect_objects(batch, threshold=threshold)
-                outputs = process_detections_with_nms(
-                    results, self._model_labels, iou_threshold=iou_threshold, use_nms=use_nms
+                if use_nms:
+                    results = apply_nms(results, iou_threshold=iou_threshold)
+                outputs = VisualDetectorClass.process_detections(
+                    results, threshold, self._model_labels, self._concepts_map
                 )
                 for output in outputs:
                     yield output
