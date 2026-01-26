@@ -1,0 +1,35 @@
+# D-Fine Object Detection Model
+# Available variants (uncomment the desired model.id and repo_id):
+#
+# | Variant | repo_id                                    | AP    | FPS (T4) |
+# |---------|-------------------------------------------|-------|----------|
+# | Small   | ustc-community/dfine-small-obj2coco       | ~48%  | ~200 FPS |
+# | Medium  | ustc-community/dfine-medium-obj2coco      | ~52%  | ~150 FPS |
+# | Large   | ustc-community/dfine-large-obj2coco-e25   | ~57%  | ~124 FPS |
+# | XLarge  | ustc-community/dfine-xlarge-coco          | ~59%  |  ~78 FPS |
+
+model:
+  id: dfine-small-obj2coco
+  # id: DFine-medium-nms
+  # id: DFine-large-nms
+  # id: DFine-xlarge-nms
+  user_id: arman
+  app_id: image-detector
+  model_type_id: visual-detector
+build_info:
+  python_version: '3.11'
+num_threads: 1
+inference_compute_info:
+  cpu_limit: '8'
+  cpu_memory: 10Gi
+  num_accelerators: 1
+  accelerator_type:
+  - NVIDIA-*
+  accelerator_memory: 10Gi
+checkpoints:
+  type: huggingface
+  repo_id: ustc-community/dfine-small-obj2coco
+  when: runtime
+  # repo_id: ustc-community/dfine-medium-obj2coco
+  # repo_id: ustc-community/dfine-large-obj2coco-e25
+  # repo_id: ustc-community/dfine-xlarge-coco
