@@ -42,8 +42,14 @@ ENV VIRTUAL_ENV=/venv
 ENV PATH="/home/nonroot/.local/bin:$VIRTUAL_ENV/bin:$PATH"
 
 
+# Copy ffmpeg and ffprobe for video processing
+COPY --from=public.ecr.aws/clarifai-models/static-streaming:5.1.8 /ffmpeg /usr/local/bin/
+COPY --from=public.ecr.aws/clarifai-models/static-streaming:5.1.8 /ffprobe /usr/local/bin/
+
 # Update clarifai package so we always have latest protocol to the API. Everything should land in /venv
 RUN ["uv", "pip", "install", "--no-cache-dir", "-r", "/home/nonroot/requirements.txt"]
+RUN ["uv", "pip", "install", "--no-cache-dir", "av"]
+RUN ["uv", "pip", "install", "--no-cache-dir", "clarifai-protocol>=0.0.48", "--no-deps"]
 RUN ["uv", "pip", "show", "--no-cache-dir", "clarifai"]
 
 # Set the NUMBA cache dir to /tmp
