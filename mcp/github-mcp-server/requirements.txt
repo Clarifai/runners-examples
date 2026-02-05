@@ -1,5 +1,5 @@
-clarifai==12.1.3
+clarifai==12.1.7
 anyio
-mcp==1.24.0
-fastmcp==2.14.1
+mcp==1.26.0
+fastmcp==2.14.5
 requests>=2.31.0
