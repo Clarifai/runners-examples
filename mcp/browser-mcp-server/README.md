@@ -69,11 +69,12 @@ Make sure your Clarifai compute cluster and nodepool meets these requirements be
 Use the Clarifai CLI to upload your model:
 
 ```bash
-clarifai model upload .
+clarifai model upload . --skip_dockerfile
 ```
+Make sure to use `--skip_dockerfile` flag while uploading the model 
 
 This command will:
-- Build a Docker image based on your configuration
+- Build a Docker image provided in the model folder
 - Upload the model to your Clarifai account
 - Make it available for inference via HTTP API
 
