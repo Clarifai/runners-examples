@@ -1,3 +1,15 @@
+---
+complexity: intermediate
+framework: custom
+model_size: N/A
+gpu_required: true
+min_gpu_memory: 20Gi
+features: [image-to-image, depth-aware, diffusion]
+model_class: ModelClass
+task: image-to-image
+---
+
+
 # Stable Diffusion 2 Depth Model
 A powerful image generation model that utilizes depth information to create more coherent and realistic images based on text prompts and reference images.
 

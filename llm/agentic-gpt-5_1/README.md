@@ -1,3 +1,15 @@
+---
+complexity: advanced
+framework: vllm
+model_size: N/A
+gpu_required: true
+min_gpu_memory: 48Gi
+features: [agentic, tool-calling, mcp-integration]
+model_class: AgenticModelClass
+task: text-generation
+---
+
+
 # Agentic GPT-5.1 Model
 
 The GPT-5.1 model with agentic capabilities enabled through MCP (Model Context Protocol) server integration. This model extends `OpenAIModelClass` with `AgenticModelClass` to provide tool discovery, execution, and iterative tool calling capabilities for both chat completions and responses endpoints, supporting both streaming and non-streaming modes. This is a multimodal model that supports both text and image inputs.

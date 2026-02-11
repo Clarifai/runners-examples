@@ -1,0 +1,21 @@
+build_info:
+  python_version: '3.12'
+  platform: 'linux/amd64,linux/arm64'
+checkpoints:
+  repo_id: google/gemma-3-4b-it
+  hf_token: hf_token
+  type: huggingface
+  when: runtime
+inference_compute_info:
+  accelerator_memory: 48Gi
+  accelerator_type:
+  - NVIDIA-*
+  cpu_limit: '15'
+  cpu_memory: 50Gi
+  num_accelerators: 1
+model:
+  app_id: llm
+  id: gemma-3-4b-it
+  model_type_id: text-to-text
+  user_id: clarifai
+num_threads: 128
