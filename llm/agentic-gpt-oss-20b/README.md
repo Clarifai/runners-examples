@@ -1,3 +1,15 @@
+---
+complexity: advanced
+framework: vllm
+model_size: 20B
+gpu_required: true
+min_gpu_memory: 48Gi
+features: [agentic, tool-calling, mcp-integration]
+model_class: AgenticModelClass
+task: text-generation
+---
+
+
 # Agentic GPT-OSS-20B Model
 
 The GPT-OSS-20B model with agentic capabilities enabled through MCP (Model Context Protocol) server integration. This model extends `OpenAIModelClass` with `AgenticModelClass` to provide tool discovery, execution, and iterative tool calling capabilities for both chat completions and responses endpoints, supporting both streaming and non-streaming modes.
