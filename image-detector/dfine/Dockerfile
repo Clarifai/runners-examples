@@ -7,7 +7,7 @@
 FROM --platform=$BUILDPLATFORM public.ecr.aws/clarifai-models/python-base:3.11-a008c5fdd0690ce7ac44d04ec54f02722837dfc5 as model-assets
 
 # Install minimal tools needed for download
-RUN pip install --no-cache-dir clarifai==12.1.3 huggingface_hub
+RUN pip install --no-cache-dir clarifai==12.2.1 huggingface_hub
 
 WORKDIR /home/nonroot/main
 
