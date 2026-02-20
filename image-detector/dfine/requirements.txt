@@ -7,7 +7,7 @@ opencv-python-headless==4.10.0.84
 clarifai==12.1.4
 clarifai-protocol==0.0.35
 hf_transfer
-onnx>=1.17.0
-onnxruntime-gpu>=1.20.0
-onnxsim>=0.4.36
+onnx==1.17.0
+onnxruntime-gpu==1.20.0
+onnxsim==0.4.36
 tensorrt-cu12>=10.0.0
