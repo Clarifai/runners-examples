@@ -1,0 +1,40 @@
+name: Validate Repository Structure
+
+on:
+  pull_request:
+    paths:
+      - '*/*/config.yaml'
+      - '*/*/README.md'
+      - '*/*/*/config.yaml'
+      - '*/*/*/README.md'
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Validate example structure
+        run: |
+          python scripts/validate_examples.py
+
+      - name: Regenerate indices
+        run: |
+          python scripts/generate_indices.py
+
+      - name: Check for index changes
+        run: |
+          git diff --exit-code FRAMEWORK_INDEX.md llm/INDEX.md mcp-servers/INDEX.md || \
+          (echo "::error::Index files are out of date. Run 'python scripts/generate_indices.py' and commit changes." && exit 1)

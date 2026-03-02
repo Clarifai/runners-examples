@@ -175,3 +175,6 @@ cython_debug/
 
 tmp
 .vscode
+# Temporary files from reorganization
+backup/
+CLAUDE.md

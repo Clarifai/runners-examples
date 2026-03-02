@@ -48,7 +48,53 @@ This guide will walk you through the process of uploading custom models to the C
       - [Dynamic Batch Prediction Handling](#dynamic-batch-prediction-handling)
 
 ### Available Model Examples
+
 Clarifai provides a collection of pre-built model examples designed for different tasks. You can leverage these examples to streamline the model upload and deployment process.
+
+#### Quick Start
+
+New to Clarifai model deployment? Start here:
+- **[hello-world/](hello-world/)** - The simplest possible example to learn the basics
+
+#### Browse by Task
+
+Examples are organized by the type of task they perform:
+
+**Text Generation & LLMs**
+- **[llm/](llm/)** - Large Language Models (9 examples)
+  - From small models (135M) to large agentic workflows (20B+)
+  - Frameworks: vLLM, SGLang, LMDeploy, HuggingFace Transformers
+  - See [llm/README.md](llm/README.md) for framework comparison
+
+**Multimodal Models**
+- **[multimodal-models/](multimodal-models/)** - Vision + Language models
+  - [vision-language/](multimodal-models/vision-language/) - Image understanding, VQA
+  - [ocr/](multimodal-models/ocr/) - Optical character recognition
+
+**Image Processing**
+- **[image-classifier/](image-classifier/)** - Image classification models
+- **[image-detector/](image-detector/)** - Object detection models
+- **[image-segmenter/](image-segmenter/)** - Segmentation models
+- **[text-to-image/](text-to-image/)** - Image generation from text
+- **[image-text-to-image/](image-text-to-image/)** - Image-to-image generation
+
+**Embeddings**
+- **[text-embedder/](text-embedder/)** - Text embedding models
+
+**MCP Servers**
+- **[mcp-servers/](mcp-servers/)** - Model Context Protocol servers (11 examples)
+  - Simple tools (browser, math, search)
+  - API integration (GitHub, Slack, databases)
+  - Advanced features (code execution, browser automation)
+  - See [mcp-servers/README.md](mcp-servers/README.md) for feature matrix
+
+**Local Development**
+- **[local-runners/](local-runners/)** - Tools for local testing and development
+
+#### Browse by Framework
+
+Looking for examples using a specific framework?
+- See **[FRAMEWORK_INDEX.md](FRAMEWORK_INDEX.md)** for all examples organized by framework (vLLM, SGLang, LMDeploy, Transformers, FastMCP, etc.)
 
 ## Installation
 

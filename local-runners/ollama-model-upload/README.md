@@ -1,3 +1,15 @@
+---
+complexity: beginner
+framework: ollama
+model_size: N/A
+gpu_required: false
+min_gpu_memory: N/A
+features: [local-development]
+model_class: N/A
+task: local-runner
+---
+
+
 ![image](https://github.com/user-attachments/assets/b22c9807-f5e7-49eb-b00d-598e400781af)
 
 # Running Ollama models using Clarifai local-runner

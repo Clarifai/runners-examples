@@ -1,3 +1,15 @@
+---
+complexity: beginner
+framework: custom
+model_size: N/A
+gpu_required: false
+min_gpu_memory: N/A
+features: [basic-inference]
+model_class: ModelClass
+task: hello-world
+---
+
+
 # Clarifai Local Runner Setup
 
 This repository demonstrates how to create and set up Clarifai local runners for custom model development. It contains a sample text-to-text model that performs string manipulation operations.
