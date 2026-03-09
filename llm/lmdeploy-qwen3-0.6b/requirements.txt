@@ -7,7 +7,7 @@ ninja
 
 timm
 openai
-clarifai
+clarifai==12.3.1
 clarifai-protocol
 psutil
 

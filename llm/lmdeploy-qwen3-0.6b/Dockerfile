@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.13-labs
+
+#############################
+# Stage 1: Model Assets
+# Architecture-agnostic stage. Runs ONCE on the build node.
+#############################
+FROM --platform=$BUILDPLATFORM public.ecr.aws/clarifai-models/python-base:3.12-77e4ad7daeb7a3b175702a1dc5778f22f35ff7a8 as model-assets
+
+# Install minimal tools needed for download
+RUN pip install --no-cache-dir clarifai==12.3.1 huggingface_hub[hf_transfer]
+
+WORKDIR /home/nonroot/main
+
+#####
+# Copy files needed for download
+# This creates the directory that HF downloader will populate and with nonroot:nonroot permissions up.
+#####
+COPY --link downloader/unused.yaml /home/nonroot/main/1/checkpoints/.cache/unused.yaml
+COPY --link config.yaml /home/nonroot/main/
+
+#####
+# Download checkpoints if config.yaml has checkpoints.when = "build"
+#####
+RUN ["python", "-m", "clarifai.cli", "model", "download-checkpoints", "/home/nonroot/main", "--out_path", "/home/nonroot/main/1/checkpoints", "--stage", "build"]
+
+# Copy in requirements.txt and 1/model.py for the actual model.
+# If checkpoints aren't downloaded since a checkpoints: block is not provided, then they will
+# be in the build context and copied here as well.
+COPY --link 1 /home/nonroot/main/1
+COPY --link requirements.txt /home/nonroot/main/
+
+#############################
+# Stage 2: Final Image
+# Architecture-specific stage.
+#############################
+FROM --platform=$TARGETPLATFORM public.ecr.aws/clarifai-models/torch:2.6.0-py3.12-cu126-77e4ad7daeb7a3b175702a1dc5778f22f35ff7a8 as final
+
+
+
+# uuid 65532 is nonroot user https://github.com/Clarifai/models-images/blob/58188a1eba3f3e5ff1112adf670839799a62bf80/base_image/Dockerfile#L33-L34
+COPY --link --chown=65532:65532 requirements.txt /home/nonroot/requirements.txt
+
+ENV VIRTUAL_ENV=/venv
+ENV PATH="/home/nonroot/.local/bin:$VIRTUAL_ENV/bin:$PATH"
+
+# Update clarifai package so we always have latest protocol to the API. Everything should land in /venv
+RUN ["uv", "pip", "install", "--no-cache-dir", "-r", "/home/nonroot/requirements.txt"]
+RUN ["uv", "pip", "install", "--no-cache-dir", "huggingface_hub[hf_transfer]"]
+RUN ["uv", "pip", "show", "--no-cache-dir", "clarifai"]
+
+# Set the NUMBA cache dir to /tmp
+# Set the TORCHINDUCTOR cache dir to /tmp
+# The CLARIFAI* will be set by the templaing system.
+ENV NUMBA_CACHE_DIR=/tmp/numba_cache \
+    TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_cache \
+    HOME=/tmp \
+    DEBIAN_FRONTEND=noninteractive
+
+# Copy ALL pre-built data from Stage 1 in one go.
+COPY --link --chown=65532:65532 --from=model-assets /home/nonroot/main /home/nonroot/main
+
+# Add the model directory to the python path.
+ENV PYTHONPATH=${PYTHONPATH}:/home/nonroot/main \
+    CLARIFAI_PAT=${CLARIFAI_PAT} \
+    CLARIFAI_USER_ID=${CLARIFAI_USER_ID} \
+    CLARIFAI_RUNNER_ID=${CLARIFAI_RUNNER_ID} \
+    CLARIFAI_NODEPOOL_ID=${CLARIFAI_NODEPOOL_ID} \
+    CLARIFAI_COMPUTE_CLUSTER_ID=${CLARIFAI_COMPUTE_CLUSTER_ID} \
+    CLARIFAI_API_BASE=${CLARIFAI_API_BASE:-https://api.clarifai.com}
+
+# Finally run tini which acts as the init process to reap zombies and wraps the clarifai cmd that starts the runner loop and local runner server.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["python", "-m", "clarifai.runners.server", "--model_path", "/home/nonroot/main"]
+#############################

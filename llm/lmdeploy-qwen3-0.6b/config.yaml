@@ -1,0 +1,14 @@
+model:
+  id: qwen3-0_6b
+
+build_info:
+  python_version: "3.12"
+
+compute:
+  instance: t4
+  cloud: aws
+
+checkpoints:
+  type: huggingface
+  repo_id: Qwen/Qwen3-0.6B
+  when: runtime
