@@ -1,0 +1,14 @@
+model:
+  id: qwen3-0_6B
+
+build_info:
+  image: vllm/vllm-openai:latest
+
+checkpoints:
+  repo_id: Qwen/Qwen3-0.6B
+  type: huggingface
+  when: runtime
+
+compute:
+  instance: a10g
+  cloud: aws
