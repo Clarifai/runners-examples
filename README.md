@@ -556,7 +556,7 @@ class MyLLM(OpenAIModelClass):
                 yield chunk.choices[0].delta.content or ""
 ```
 
-**See:** [`llm/vllm-gemma-3-1b-it/`](llm/vllm-gemma-3-1b-it/) for a vLLM example, or [`llm/Sglang-SmolLM2-1_7B-Instruct/`](llm/Sglang-SmolLM2-1_7B-Instruct/) for SGLang.
+**See:** [`llm/vllm-qwen3-0.6B/`](llm/vllm-qwen3-0.6B/) for a vLLM example, or [`llm/sglang-qwen3.5-4b/`](llm/sglang-qwen3.5-4b/) for SGLang.
 
 > **Tip:** The fastest way to deploy an LLM is `clarifai model init --toolkit vllm --model-name <hf-repo>` — it generates the full model.py, config.yaml, and requirements.txt with the right server setup.
 
@@ -654,12 +654,12 @@ for transcript in model.transcribe(audio=iter(Audio(bytes=b"..."))):
 
 | Example | Toolkit | Description |
 |---------|---------|-------------|
-| [`vllm-gemma-3-1b-it`](llm/vllm-gemma-3-1b-it/) | vLLM | Gemma 3 1B with vLLM |
+| [`vllm-qwen3-0.6B`](llm/vllm-qwen3-0.6B/) | vLLM | Qwen3 0.6B with vLLM |
+| [`sglang-qwen3.5-4b`](llm/sglang-qwen3.5-4b/) | SGLang | Qwen3.5 4B with SGLang |
+| [`lmdeploy-qwen3-0.6b`](llm/lmdeploy-qwen3-0.6b/) | LMDeploy | Qwen3 0.6B with LMDeploy |
 | [`hf-llama-3_2-1b-instruct`](llm/hf-llama-3_2-1b-instruct/) | HuggingFace | Llama 3.2 1B with Transformers |
-| [`Sglang-SmolLM2-1_7B-Instruct`](llm/Sglang-SmolLM2-1_7B-Instruct/) | SGLang | SmolLM2 1.7B with SGLang |
-| [`lmdeploy-Llama-3_2-3B-Instruct`](llm/lmdeploy-Llama-3_2-3B-Instruct/) | LMDeploy | Llama 3.2 3B with LMDeploy |
-| [`vllm-tool-calling-llama-3.1-8b`](llm/vllm-tool-calling-llama-3.1-8b/) | vLLM | Llama 3.1 8B with tool calling |
 | [`agentic-gpt-5_1`](llm/agentic-gpt-5_1/) | Agentic | Agentic model with tool use |
+| [`agentic-gpt-oss-20b`](llm/agentic-gpt-oss-20b/) | Agentic | Open-source agentic model |
 
 ### MCP Tool Servers (`mcp/`)
 
@@ -678,9 +678,7 @@ for transcript in model.transcribe(audio=iter(Audio(bytes=b"..."))):
 | Example | Description |
 |---------|-------------|
 | [`qwen2_5-VL-3B-Instruct-vllm`](multimodal-models/qwen2_5-VL-3B-Instruct-vllm/) | Qwen2.5 Vision 3B with vLLM |
-| [`openai-gpt-4o`](multimodal-models/openai-gpt-4o/) | GPT-4o wrapper |
-| [`claude-sonnet-3.7`](multimodal-models/claude-sonnet-3.7/) | Claude Sonnet 3.7 wrapper |
-| [`deepseek-ocr-sglang`](multimodal-models/deepseek-ocr-sglang/) | DeepSeek OCR with SGLang |
+| [`sglang-deepseek-ocr`](multimodal-models/sglang-deepseek-ocr/) | DeepSeek OCR with SGLang |
 
 ### Other Models
 
