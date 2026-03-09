@@ -90,15 +90,3 @@ class MyRunner(ModelClass):
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
         )
         return output_text[0]
-
-    def test(self):
-        """Test the model with a sample image."""
-        import requests  # Import moved here as it's only used for testing
-
-        # Load a sample image from the IAM database
-        url = "https://dl.a9t9.com/ocr/solarcell.jpg"
-        image = Image(bytes=requests.get(url).content)
-        # image = Image.from_url(url)
-        generated_text = self.predict(image)
-        # Log the detected text
-        logger.info(f"Detected text:\n{generated_text}")
