@@ -12,47 +12,16 @@ The GPT-OSS-20B model with agentic capabilities enabled through MCP (Model Conte
 pip install clarifai
 ```
 
-### 2. Set your Clarifai Personal Access Token (PAT)
-
-Retrieve your PAT from your Clarifai account security settings.
+### 2. Login to Clarifai
 
 ```bash
-export CLARIFAI_PAT="your_personal_access_token"
+clarifai login
 ```
 
----
-
-## Model Upload Guide
-
-### 1. Update Configuration
-
-Before uploading, update the `config.yaml` file with your Clarifai credentials:
-
-```yaml
-model:
-  id: "gpt-oss-20b"  # You can change this to your preferred model ID
-  user_id: "YOUR_USER_ID"      # Replace with your Clarifai user ID
-  app_id: "YOUR_APP_ID"        # Replace with your Clarifai app ID
-  model_type_id: "text-to-text"
-```
-
-### 2. Compute Requirements
-
-The model requires the following compute resources as specified in `config.yaml`:
-
-- CPU: 8 cores
-- CPU Memory: 30Gi (limit), 20Gi (requests)
-- GPU: 1 NVIDIA GPU (any type)
-- GPU Memory: 48Gi
-
-Make sure your Clarifai compute cluster and nodepool meets these requirements before deploying the model.
-
-### 3. Upload the Model
-
-Use the Clarifai CLI to upload your model:
+### 3. Deploy
 
 ```bash
-clarifai model upload .
+clarifai model deploy .
 ```
 
 This command will:
