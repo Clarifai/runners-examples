@@ -12,12 +12,16 @@ The GPT-5.1 model with agentic capabilities enabled through MCP (Model Context P
 pip install clarifai
 ```
 
-### 2. Set your Clarifai Personal Access Token (PAT)
-
-Retrieve your PAT from your Clarifai account security settings.
+### 2. Login to Clarifai
 
 ```bash
-export CLARIFAI_PAT="your_personal_access_token"
+clarifai login
+```
+
+### 3. Deploy
+
+```bash
+clarifai model deploy llm/agentic-gpt-5_1
 ```
 
 ---
