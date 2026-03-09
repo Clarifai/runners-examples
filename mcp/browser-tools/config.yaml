@@ -6,4 +6,4 @@ build_info:
   python_version: "3.11"
 
 compute:
-  instance: t3a.2xlarge
+  instance: t3a.2xlarge   # CPU instance from AWS
