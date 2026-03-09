@@ -5,4 +5,4 @@ build_info:
   python_version: "3.12"
 
 compute:
-  instance: t3a.2xlarge
+  instance: cpu

@@ -5,7 +5,7 @@ build_info:
   python_version: "3.12"
 
 compute:
-  instance: g6e.2xlarge
+  instance: g6e.2xlarge  # L40S from AWS
 
 checkpoints:
   type: "huggingface"
