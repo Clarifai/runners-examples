@@ -8,3 +8,4 @@ opencv-python-headless==4.10.0.84
 numpy
 aiohttp
 scipy>=1.10.1
+clarifai

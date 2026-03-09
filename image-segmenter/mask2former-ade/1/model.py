@@ -84,29 +84,3 @@ class MyRunner(VisualDetectorClass):
   def generate(self, video: dt.Video) -> Iterator[dt.Region]:
     for frame in self.video_to_frames(video.bytes):
       yield self.predict(image=frame.image)
-      
-  def test(self):
-    import requests
-    
-    image = dt.Image(bytes=requests.get("https://samples.clarifai.com/metro-north.jpg").content)
-    video = dt.Video(bytes=requests.get("https://samples.clarifai.com/beer.mp4").content)   
-
-    logger.info("# -------- Test predict/detect -------------")
-    logger.info(f"{self.predict(image=image)}")
-    logger.info("# -------- Test generate -------------")
-    n=5
-    for i, each in enumerate(self.generate(video=video)):
-      print(each)
-      if i > n:
-        break
-    
-    logger.info("# -------- Test stream -------------")
-    
-    def iteration():
-      for each in [image]*10:
-        yield each
-    
-    for i, each in enumerate(self.stream(images=iteration())):
-      print(each)
-      if i > n:
-        break
