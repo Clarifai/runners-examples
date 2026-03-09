@@ -1,21 +1,13 @@
+model:
+  id: gpt-oss-20b
+
 build_info:
-  python_version: '3.12'
-num_threads: 128
+  python_version: "3.12"
+
+compute:
+  instance: g6e.2xlarge  # L40S from AWS
+
 checkpoints:
   type: "huggingface"
   repo_id: "openai/gpt-oss-20b"
   when: "runtime"
-
-inference_compute_info:
-  cpu_limit: "8"
-  cpu_memory: "30Gi"
-  cpu_requests: "8"
-  cpu_memory_requests: "20Gi"
-  num_accelerators: 1
-  accelerator_type: ["NVIDIA-*"]
-  accelerator_memory: "48Gi"
-model:
-  app_id: app_id
-  id: gpt-oss-20b
-  model_type_id: text-to-text
-  user_id: user_id

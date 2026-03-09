@@ -13,19 +13,15 @@ model:
   # id: DFine-medium-nms
   # id: DFine-large-nms
   # id: DFine-xlarge-nms
-  user_id: arman
-  app_id: image-detector
   model_type_id: visual-detector
+
 build_info:
-  python_version: '3.11'
-num_threads: 1
-inference_compute_info:
-  cpu_limit: '8'
-  cpu_memory: 10Gi
-  num_accelerators: 1
-  accelerator_type:
-  - NVIDIA-*
-  accelerator_memory: 10Gi
+  python_version: "3.11"
+
+compute:
+  instance: t4
+  cloud: aws
+
 checkpoints:
   type: huggingface
   repo_id: ustc-community/dfine-small-obj2coco

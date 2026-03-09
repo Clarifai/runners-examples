@@ -1,0 +1,12 @@
+model:
+  id: qwen3_5-4b
+build_info:
+  image: lmsysorg/sglang:latest
+checkpoints:
+  repo_id: Qwen/Qwen3.5-4B
+  type: huggingface
+  when: runtime
+compute:
+  instance: A10G
+  cloud: aws
+

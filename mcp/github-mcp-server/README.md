@@ -33,35 +33,26 @@ export CLARIFAI_PAT="your_personal_access_token"
 
 ## Model Upload Guide
 
-### 1. Update Configuration
+### 1. Configuration
 
-Before uploading, update the `config.yaml` file with your Clarifai credentials:
+The `config.yaml` is pre-configured:
 
 ```yaml
 model:
-  id: "github-mcp-server"        # You can change this to your preferred model ID
-  user_id: "YOUR_USER_ID"        # Replace with your Clarifai user ID
-  app_id: "YOUR_APP_ID"          # Replace with your Clarifai app ID
-  model_type_id: "text-to-text"
+  id: github-mcp-server
+  model_type_id: mcp
 
 mcp_server:
   command: "npx"
   args: ["-y", "@modelcontextprotocol/server-github"]
+
+compute:
+  instance: t3a.2xlarge
 ```
 
 The `mcp_server` section specifies:
 - **command**: The command to run the MCP server (e.g., `npx`, `uvx`, `python`)
 - **args**: Arguments passed to the command to start the MCP server
-
-#### Compute Requirements
-
-The model requires the following compute resources as specified in `config.yaml`:
-
-- CPU: 1000m (1 core)
-- CPU Memory: 1Gi
-- GPU: Not required (0 accelerators)
-
-Make sure your Clarifai compute cluster and nodepool meets these requirements before deploying the model.
 
 ### 2. Configure Secrets (Optional)
 
@@ -90,18 +81,13 @@ secrets:
 
 Refer: https://docs.clarifai.com/control/authentication/environment-secrets
 
-### 3. Upload the Model
-
-Use the Clarifai CLI to upload your model:
+### 3. Deploy
 
 ```bash
-clarifai model upload .
+clarifai model deploy mcp/github-mcp-server
 ```
 
-This command will:
-- Build a Docker image based on your configuration
-- Upload the model to your Clarifai account
-- Make it available for inference via HTTP API
+This builds, uploads, and deploys the MCP server to Clarifai in one step.
 
 ---
 

@@ -129,17 +129,3 @@ class TextToImageModel(ModelClass):
     
     return [Image.from_pil(image) for image in images]
   
-
-  def test(self):
-    """ 
-    Test cases only executed when running `clarifai model test-locally`
-    """
-    image = self.predict(
-    prompt="A Ghibli animated orange cat, panicked about a deadline, sits in front of a Banana-brand laptop.", 
-    negative_prompt="Ugly, cute", guidance_scale=7)
-    print(image)
-
-    images = self.create(
-        prompt=["A Ghibli animated orange cat, panicked about a deadline, sits in front of a Banana-brand laptop."]*3, 
-        negative_prompt=["Ugly, cute"]*2, guidance_scale=7)
-    print(images)

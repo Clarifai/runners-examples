@@ -1,19 +1,13 @@
 model:
   id: "jinaai-embeddings-v3"
-  user_id: "user_id"
-  app_id: "app_id"
   model_type_id: "text-embedder"
 
 build_info:
   python_version: "3.12"
 
-inference_compute_info:
-  accelerator_memory: 10Gi
-  accelerator_type:
-  - NVIDIA-*
-  cpu_limit: "3"
-  cpu_memory: "10Gi"
-  num_accelerators: 1
+compute:
+  instance: t4
+  cloud: aws
 
 checkpoints:
   type: "huggingface"

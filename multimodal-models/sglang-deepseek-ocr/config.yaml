@@ -1,0 +1,11 @@
+model:
+  id: DeepSeek-OCR
+  model_type_id: multimodal-to-text
+
+build_info:
+  image: lmsysorg/sglang:latest
+
+compute:
+  instance: l40s
+  cloud: aws
+  num_gpus: 1

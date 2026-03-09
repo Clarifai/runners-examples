@@ -1,130 +1,128 @@
-# MCP Examples
+# MCP Server Examples
 
-This directory contains example MCP (Model Control Protocol) servers built with the FastMCP framework. Each example demonstrates how to create specialized MCP servers for different use cases.
-
-## Directory Structure
-
-Each MCP server example follows the same structure:
-- `1/model.py` - The main MCP server implementation
-- `config.yaml` - Model configuration for Clarifai deployment
-- `requirements.txt` - Python dependencies
-- `client.py` - Example client demonstrating usage
+This directory contains example MCP (Model Context Protocol) servers for deployment on Clarifai. Each example shows how to create or deploy MCP servers that provide tools for LLMs.
 
 ## Available Examples
 
-### 1. Browser Tools (`browser-tools/`)
-**Purpose**: Web browsing, scraping, and search capabilities
-**Key Features**:
-- Webpage content fetching
-- HTML parsing and text extraction
-- Link extraction and analysis
-- Website status checking
-- Search functionality (mock implementation)
-- Content search within pages
+### Stdio MCP Servers (Open Source)
 
-### 2. Google Drive (`google-drive/`)
-**Purpose**: Google Drive operations for file storage and collaboration
-**Key Features**:
-- File listing and search
-- Upload and download operations
-- Sharing and permission management
-- Folder creation and organization
-- File format conversion
-- Collaboration features
+These examples deploy existing open-source MCP servers using `StdioMCPModelClass`:
 
-### 3. PostgreSQL (`postgres/`)
-**Purpose**: PostgreSQL database operations and advanced features
-**Key Features**:
-- Database connection and query execution
-- Advanced PostgreSQL features (JSONB, arrays)
-- Table statistics and analysis
-- Connection monitoring
-- Backup and restore operations
+| Example | Description |
+|---------|-------------|
+| [browser-mcp-server](browser-mcp-server/) | DuckDuckGo web search (no auth needed) |
+| [github-mcp-server](github-mcp-server/) | GitHub repositories, PRs, issues |
+| [web-search](web-search/) | Web search capabilities |
 
-## Usage
+### Custom MCP Servers (FastMCP)
 
-### Running an Example
+These examples implement custom MCP servers using the FastMCP framework:
 
-1. Navigate to the desired example directory:
-```bash
-cd runners-examples/mcp/browser-tools
+| Example | Description |
+|---------|-------------|
+| [browser-tools](browser-tools/) | Web browsing, scraping, and search |
+| [firecrawl-browser-tools](firecrawl-browser-tools/) | Advanced web scraping via Firecrawl |
+| [slack-tools-server](slack-tools-server/) | Slack messaging and channel management |
+| [google-drive](google-drive/) | Google Drive file operations |
+| [postgres](postgres/) | PostgreSQL database operations |
+| [math](math/) | Mathematical computations |
+| [code-execution-docker-version](code-execution-docker-version/) | Python code execution in Docker |
+| [code-execution-without-docker-version](code-execution-without-docker-version/) | Python code execution (no Docker) |
+
+## Deploying an MCP Server
+
+### Stdio MCP Servers
+
+For existing open-source MCP servers, just configure `config.yaml`:
+
+```yaml
+model:
+  id: my-mcp-server
+  model_type_id: mcp
+
+mcp_server:
+  command: "npx"
+  args: ["-y", "@modelcontextprotocol/server-github"]
+
+compute:
+  instance: t3a.2xlarge
 ```
 
-2. Install dependencies:
+Then deploy:
+
 ```bash
-pip install -r requirements.txt
+clarifai model deploy mcp/github-mcp-server
 ```
 
-3. Run the client example:
-```bash
-python client.py
+### Custom MCP Servers
+
+For custom servers, implement your tools in `1/model.py`:
+
+```python
+from clarifai.runners.models.mcp_class import MCPModelClass
+from mcp.server.fastmcp import FastMCP
+
+class MyMCPServer(MCPModelClass):
+    def create_mcp_server(self):
+        mcp = FastMCP("my-server")
+
+        @mcp.tool()
+        def my_tool(query: str) -> str:
+            return f"Result for: {query}"
+
+        return mcp
 ```
 
-### Deploying to Clarifai
+Then deploy:
 
-Each example includes a `config.yaml` file for deployment to Clarifai's model hosting platform:
-
-1. Ensure you have the Clarifai CLI installed
-2. Configure your credentials
-3. Deploy the model:
 ```bash
-clarifai model upload
+clarifai model deploy mcp/my-server
 ```
 
-## Configuration
+## Using Deployed MCP Servers
 
-### Environment Variables
+### With FastMCP Client
 
-Many examples require specific environment variables for authentication:
+```python
+import asyncio
+import os
+from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
 
-- **PostgreSQL**: `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE`
-- **Google Drive**: OAuth 2.0 credentials setup required
+transport = StreamableHttpTransport(
+    url="https://api.clarifai.com/v2/ext/mcp/v1/users/{user_id}/apps/{app_id}/models/{model_id}",
+    headers={"Authorization": "Bearer " + os.environ["CLARIFAI_PAT"]},
+)
 
-### Mock Data
+async def main():
+    async with Client(transport) as client:
+        tools = await client.list_tools()
+        print(f"Available tools: {tools}")
 
-Examples include mock data and fallback implementations when external services are not available, allowing you to test the MCP interface without requiring all external dependencies.
+        result = await client.call_tool("my_tool", {"query": "hello"})
+        print(result[0].text)
 
-## Implementation Details
+asyncio.run(main())
+```
 
-### FastMCP Framework
+### With Agentic LLMs
 
-All examples use the FastMCP v2 framework which provides:
-- Automatic tool registration from function definitions
-- Type validation using Pydantic
-- Resource and prompt management
-- HTTP and stdio transport support
+MCP servers can be attached to LLMs as tool providers:
 
-### Error Handling
+```python
+from openai import OpenAI
 
-Each MCP server implements comprehensive error handling:
-- Input validation
-- Service availability checks
-- Graceful degradation with mock data
-- Detailed error messages
+client = OpenAI(
+    api_key=os.environ["CLARIFAI_PAT"],
+    base_url="https://api.clarifai.com/v2/ext/openai/v1"
+)
 
-### Security
-
-Code execution examples (like code-sandbox) implement security measures:
-- Restricted imports and builtins
-- Execution timeouts
-- Safe environment isolation
-- Input sanitization
-
-## Extending Examples
-
-To create a new MCP server example:
-
-1. Create a new directory following the naming convention
-2. Implement the MCP server in `1/model.py`
-3. Create appropriate `config.yaml`, `requirements.txt`, and `client.py` files
-4. Follow the established patterns for tools, resources, and prompts
-5. Include proper error handling and mock data support
-
-## Contributing
-
-When adding new examples:
-- Follow the existing directory structure
-- Include comprehensive documentation
-- Provide working client examples
-- Test with both real and mock data
-- Ensure proper error handling
+completion = client.chat.completions.create(
+    model="https://clarifai.com/{user_id}/{app_id}/models/{llm_model_id}",
+    messages=[{"role": "user", "content": "Search the web for AI news"}],
+    extra_body={"mcp_servers": [
+        "https://clarifai.com/clarifai/mcp/models/browser-mcp-server"
+    ]},
+    stream=True
+)
+```
