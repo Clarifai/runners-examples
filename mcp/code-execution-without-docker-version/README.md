@@ -6,5 +6,5 @@ This MCP tool provides Python code execution capabilities using the local Python
 
 This tool can support both local-runner and deployment:
 
-1. For local development: `clarifai model local-runner`
-2. For deployment: `clarifai model upload`
+1. For local development: `clarifai model serve`
+2. For deployment: `clarifai model deploy`

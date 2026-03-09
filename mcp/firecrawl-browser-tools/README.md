@@ -17,10 +17,8 @@ secrets:
 
 ### Deployment to Clarifai
 
-The server includes a `config.yaml` file for deployment to Clarifai's model hosting platform:
-
 ```bash
-clarifai model upload
+clarifai model deploy mcp/firecrawl-browser-tools
 ```
 
 

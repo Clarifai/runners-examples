@@ -5,7 +5,7 @@ This MCP tool provides Python code execution capabilities in Docker containers u
 ## Prerequisites
 
 1. **Docker**: Docker must be installed and running on your local machine
-2. **Clarifai Local Runner**: Set up according to https://docs.clarifai.com/compute/local-runners/
+2. **Clarifai CLI**: Install with `pip install clarifai`
 3. **Docker Socket Access**: The MCP server needs access to your local Docker daemon
 
 ## Setup Instructions
