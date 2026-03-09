@@ -8,3 +8,4 @@ build_info:
 compute:
   instance: l40s
   cloud: aws
+  num_gpus: 1
