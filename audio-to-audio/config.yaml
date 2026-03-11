@@ -1,0 +1,10 @@
+model:
+  id: "orpheus-tts-streaming"
+  model_type_id: "text-to-audio"
+
+build_info:
+  python_version: "3.11"
+
+compute:
+  instance: a10g
+  cloud: aws
