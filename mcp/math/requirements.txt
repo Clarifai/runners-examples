@@ -1,4 +1,4 @@
 # Clarifai SDK - required
 clarifai
-fastmcp
+fastmcp>=3.2.0
 pydantic

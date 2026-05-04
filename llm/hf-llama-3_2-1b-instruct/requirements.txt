@@ -1,6 +1,6 @@
 clarifai==12.3.1
-torch>=2.6.0
-transformers>=4.47.0
+torch>=2.8.0
+transformers>=5.0.0rc3
 accelerate>=1.2.0
 optimum>=1.23.3
 scipy>=1.10.1
