@@ -656,7 +656,6 @@ for transcript in model.transcribe(audio=iter(Audio(bytes=b"..."))):
 |---------|---------|-------------|
 | [`vllm-qwen3-0.6B`](llm/vllm-qwen3-0.6B/) | vLLM | Qwen3 0.6B with vLLM |
 | [`sglang-qwen3.5-4b`](llm/sglang-qwen3.5-4b/) | SGLang | Qwen3.5 4B with SGLang |
-| [`lmdeploy-qwen3-0.6b`](llm/lmdeploy-qwen3-0.6b/) | LMDeploy | Qwen3 0.6B with LMDeploy |
 | [`hf-llama-3_2-1b-instruct`](llm/hf-llama-3_2-1b-instruct/) | HuggingFace | Llama 3.2 1B with Transformers |
 | [`agentic-gpt-5_1`](llm/agentic-gpt-5_1/) | Agentic | Agentic model with tool use |
 | [`agentic-gpt-oss-20b`](llm/agentic-gpt-oss-20b/) | Agentic | Open-source agentic model |
