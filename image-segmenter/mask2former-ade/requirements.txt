@@ -1,8 +1,8 @@
-torch==2.6.0
+torch==2.8.0
 tokenizers>=0.19.1
-transformers>=4.44.2
-pillow>=10.4.0
-requests>=2.32.3
+transformers>=5.0.0rc3
+pillow>=12.2.0
+requests>=2.33.0
 timm
 opencv-python-headless==4.10.0.84
 numpy

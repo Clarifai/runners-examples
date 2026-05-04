@@ -1,12 +1,12 @@
 tokenizers==0.21.0
-transformers>=4.48
+transformers>=5.0.0rc3
 diffusers==0.32.2
 accelerate==1.2.0
 optimum==1.23.3
 xformers
 einops==0.8.0
-requests==2.32.3
+requests==2.33.0
 numpy>2.0
-torch==2.5.1
+torch==2.8.0
 clarifai
 clarifai-protocol
