@@ -1,6 +1,6 @@
 torch==2.8.0
 tokenizers>=0.19.1
-transformers>=5.0.0rc3
+transformers>=5.8.1
 pillow>=12.2.0
 requests>=2.33.0
 timm
