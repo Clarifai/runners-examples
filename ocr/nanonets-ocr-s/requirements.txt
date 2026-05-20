@@ -1,4 +1,4 @@
-clarifai>=11.12.1
+clarifai>=12.5.0
 hf-transfer
 pillow==12.2.0
 torch==2.8.0
