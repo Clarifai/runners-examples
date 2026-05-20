@@ -4,7 +4,7 @@ pillow==12.2.0
 requests>=2.33.0
 timm==1.0.12
 opencv-python-headless==4.10.0.84
-clarifai==12.2.1
+clarifai==12.5.0
 clarifai-protocol==0.0.35
 hf_transfer
 onnx==1.21.0
