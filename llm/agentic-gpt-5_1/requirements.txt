@@ -3,4 +3,4 @@ clarifai>=12.1.4
 anyio
 mcp==1.23.0
 fastmcp==3.2.0
-requests>=2.33.0
+requests>=2.34.2
