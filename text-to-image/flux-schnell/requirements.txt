@@ -11,6 +11,6 @@ numpy>2.0
 ninja
 aiohttp
 packaging
-torch==2.8.0
+torch==2.12.0
 clarifai
 clarifai-protocol
