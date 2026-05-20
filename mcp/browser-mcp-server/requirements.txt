@@ -1,4 +1,4 @@
-clarifai==12.1.7
+clarifai==12.5.0
 anyio
 mcp==1.26.0
 fastmcp==3.2.0
