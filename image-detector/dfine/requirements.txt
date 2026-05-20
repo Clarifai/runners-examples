@@ -8,6 +8,6 @@ clarifai==12.2.1
 clarifai-protocol==0.0.35
 hf_transfer
 onnx==1.21.0
-onnxruntime-gpu==1.20.0
+onnxruntime-gpu==1.26.0
 onnxsim==0.4.36
 tensorrt-cu12>=10.0.0
