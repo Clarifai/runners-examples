@@ -1,0 +1,15 @@
+# Dependabot configuration for runners-examples.
+# Watches every requirements.txt across model directories so vulnerability
+# bumps arrive as auto-PRs instead of accumulating as Security tab alerts.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directories:
+      - "/**"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
