@@ -10,7 +10,7 @@ openai
 clarifai>=12.1.4
 psutil
 
-torch==2.9.0
+torch==2.12.0
 vllm==0.20.0
 transformers==5.0.0rc3
 hf-transfer
